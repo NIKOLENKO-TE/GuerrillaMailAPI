@@ -116,4 +116,5 @@ public class GuerrillaMailAPITest {
 
 ```
 <hr>
+
 ## 💡 Feel free to contribute to this project by submitting a pull request or opening an issue! Happy coding! 😊

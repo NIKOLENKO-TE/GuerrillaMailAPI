@@ -104,6 +104,16 @@ public class Main {
 * Running Tests
 The project includes a simple test to demonstrate the usage of the API.
 
+**emailAddress**     The email address to check for new emails.
+
+**startDelay**       The delay in seconds before the first attempt to check emails.
+
+**numAttempts**      The number of attempts to check for emails.
+
+**intervalAttempts** The interval in seconds between each email check attempt.
+
+**stopDomain**       The domain name that, if an email is received from, will cause the method to immediately stop.
+
 ```java
 @Test
 public void testReadMail() {

@@ -105,13 +105,9 @@ public class Main {
 The project includes a simple test to demonstrate the usage of the API.
 
 ```java
-import org.junit.jupiter.api.Test;
-
-public class GuerrillaMailAPITest {
-    @Test
-    public void testReadMail() {
-        GuerrillaMailAPI.readMail(GuerrillaMailAPI.getEmailAddress(), 1, 50, 5, "example.com");
-    }
+@Test
+public void testReadMail() {
+  readMail(getEmailAddress(), 1, 50, 5, "stop@eemail.com");
 }
 
 ```

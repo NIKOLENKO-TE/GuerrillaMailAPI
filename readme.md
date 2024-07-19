@@ -4,7 +4,7 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 
 ## 📋 Table of Contents
 
-- [Features](#features)
+- [Features](https://github.com/NIKOLENKO-TE/read_random_email/?tab=readme-ov-file#-features)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Usage](#usage)

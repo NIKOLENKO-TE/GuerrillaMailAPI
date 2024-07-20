@@ -9,7 +9,7 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 - [Installation](#-installation)
 - [Usage](#-usage)
 - [Examples](#-examples)
-- [Development](#-development)
+- [Development](#-Development)
 
 ## ✨ Features
 
@@ -112,7 +112,9 @@ public class Main {
 The project includes a simple test to demonstrate the usage of the API.
 
 
-```
+<div align="center">
 <hr>
 
-## 💡 Feel free to contribute to this project by submitting a pull request or opening an issue! Happy coding! 😊
+## 💡Feel free to contribute to this project by submitting a pull request or opening an issue! Happy coding!😊
+
+</div>

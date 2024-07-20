@@ -1,10 +1,10 @@
-# 📧 GuerrillaMailAPI
+# 📧 GuerrillaMailAPI 📬
 
 A Java utility to interact with the Guerrilla Mail API for creating and managing temporary email addresses. This project demonstrates how to retrieve new email addresses, check inbox for new emails, and fetch email content using Guerrilla Mail's API.
 
 ## 📋 Table of Contents
 
-- [Features](#-features)
+- [Features](#)
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Usage](#-usage)
@@ -40,69 +40,7 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 
 ## 🚀 Usage
 
-### Retrieve a New Email Address
-
-```java
-public class Main {
-    public static void main(String[] args) {
-        String email = GuerrillaMailAPI.getEmailAddress();
-        System.out.println("Generated Email: " + email);
-    }
-}
-```
-
-### Check Inbox for New Emails
-```java
-public class Main {
-    public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getEmailAddress();
-        GuerrillaMailAPI.readMail(emailAddress, 10, 5, 20, "example.com");
-    }
-}
-```
-
-### Fetch Email Content
-```java
-public class Main {
-    public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getEmailAddress();
-        int mailId = 123456; // Replace with actual mail ID
-        String content = GuerrillaMailAPI.getEmailContent(mailId);
-        System.out.println("Email Content: " + content);
-    }
-}
-
-```
-## 📝 Examples
-#### Example 1: Generate and Print an Email Address
-```java
-public class Main {
-    public static void main(String[] args) {
-        String email = GuerrillaMailAPI.getEmailAddress();
-        System.out.println("Generated Email: " + email);
-    }
-}
-
-```
-
-#### Example 2: Read Emails with Specific Stop Domain
-```java
-public class Main {
-    public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getEmailAddress();
-        GuerrillaMailAPI.readMail(emailAddress, 1, 50, 5, "stop@email.com");
-    }
-}
-
-```
-
-## 🛠️ Development
-#### Setup
-* Ensure you have **Java** and **Gradle** installed.
-* Clone the repository.
-* Import the project into your preferred IDE.
-* Running Tests
-The project includes a simple test to demonstrate the usage of the API.
+### 📜 Retrieve a New Email Address
 
 ▶️ **emailAddress**     The email address to check for new emails.
 
@@ -117,8 +55,62 @@ The project includes a simple test to demonstrate the usage of the API.
 ```java
 @Test
 public void testReadMail() {
-  readMail(getEmailAddress(), 1, 50, 5, "stop@eemail.com");
+   readMail(getEmailAddress(), 1, 50, 5, "stop@eemail.com");
 }
+```
+
+### 📋 Check Inbox for New Emails
+```java
+public class Main {
+    public static void main(String[] args) {
+        String email = GuerrillaMailAPI.getEmailAddress();
+        System.out.println("Generated Email: " + email);
+    }
+}
+```
+
+### 📋 Fetch Email Content
+```java
+public class Main {
+    public static void main(String[] args) {
+        String emailAddress = GuerrillaMailAPI.getEmailAddress();
+        int mailId = 123456; // Replace with actual mail ID
+        String content = GuerrillaMailAPI.getEmailContent(mailId);
+        System.out.println("Email Content: " + content);
+    }
+}
+```
+## 📝 Examples
+#### Example 1: 📜 Generate and Print an Email Address
+```java
+public class Main {
+    public static void main(String[] args) {
+        String email = GuerrillaMailAPI.getEmailAddress();
+        System.out.println("Generated Email: " + email);
+    }
+}
+
+```
+
+#### Example 2: 📜 Read Emails with Specific Stop Domain
+```java
+public class Main {
+    public static void main(String[] args) {
+        String emailAddress = GuerrillaMailAPI.getEmailAddress();
+        GuerrillaMailAPI.readMail(emailAddress, 1, 50, 5, "stop@email.com");
+    }
+}
+
+```
+
+## 🛠️ Development
+#### ⚙️ Setup
+* Ensure you have **Java** and **Gradle** installed.
+* Clone the repository.
+* Import the project into your preferred IDE.
+* Running Tests
+The project includes a simple test to demonstrate the usage of the API.
+
 
 ```
 <hr>

@@ -25,7 +25,8 @@ public class GuerrillaMailAPI {
   public static String getEmailAddress() {
     String apiUrl = API_URL + "?f=get_email_address&lang=en&sid_token=" + sidToken;
     try {
-      String response = getResponseFromUrl(apiUrl);
+      HttpURLConnection connection = setupConnection(apiUrl);
+      String response = readResponse(connection);
       JSONObject jsonResponse = new JSONObject(response);
       if (jsonResponse.has("email_addr")) {
         String emailAddress = jsonResponse.getString("email_addr");
@@ -39,6 +40,7 @@ public class GuerrillaMailAPI {
     }
     return null;
   }
+
 
   /**
    * Attempts to read emails for a given email address with specified parameters and conditions.
@@ -138,7 +140,16 @@ public class GuerrillaMailAPI {
    */
   private static String getResponseFromUrl(String apiUrl) throws Exception {
     HttpURLConnection connection = setupConnection(apiUrl);
-    return readResponse(connection);
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+      StringBuilder responseBuilder = new StringBuilder();
+      String line;
+      while ((line = reader.readLine()) != null) {
+        responseBuilder.append(line);
+      }
+      String response = responseBuilder.toString();
+      System.out.println("Response from " + apiUrl + ": " + response); // Debugging output
+      return response;
+    }
   }
 
   /**
@@ -224,5 +235,92 @@ public class GuerrillaMailAPI {
   @Test
   public void test() {
     readMail(getEmailAddress(), 1, 50, 5, "target@email.com");
+  }
+  public static boolean setEmailUser(String emailAddress) {
+    String apiUrl = API_URL + "?f=set_email_user&email=" + emailAddress;
+    try {
+      String response = getResponseFromUrl(apiUrl);
+      System.out.println("Response from " + apiUrl + ": " + response); // Логирование полного ответа
+
+      // Попробуйте парсить ответ как JSON только если он выглядит как JSON
+      if (response.trim().startsWith("{")) {
+        JSONObject jsonResponse = new JSONObject(response);
+        if (jsonResponse.has("success") && jsonResponse.getBoolean("success")) {
+          System.out.println("Email user set successfully.");
+          return true;
+        } else {
+          System.err.println("Failed to set email user: " + response);
+        }
+      } else {
+        System.err.println("Unexpected response format: " + response);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  /**
+   * Читает письма с существующего почтового ящика.
+   *
+   * @param emailAddress     Существующий почтовый ящик для проверки писем.
+   * @param startDelay       Задержка в секундах перед первой попыткой проверки почты.
+   * @param numAttempts      Количество попыток проверки писем.
+   * @param intervalAttempts Интервал в секундах между попытками проверки почты.
+   * @param stopDomain       Домен, с которого, если получено письмо, метод немедленно прекратит работу.
+   */
+  public static void readExistingMail(String emailAddress, int startDelay, int numAttempts, int intervalAttempts, String stopDomain) {
+    if (emailAddress == null || emailAddress.isEmpty()) {
+      System.err.println("Неверный адрес электронной почты. Не удается проверить почту.");
+      return;
+    }
+
+    try {
+      Thread.sleep(startDelay * 1000L); // Конвертировать в миллисекунды
+
+      // Установить почтовый ящик (может потребоваться, если API требует этого шага)
+      if (!setEmailUser(emailAddress)) {
+        System.err.println("Не удалось установить почтовый ящик. Выход.");
+        return;
+      }
+
+      for (int attempt = 1; attempt <= numAttempts; attempt++) {
+        System.out.println("Попытка " + attempt + " проверить почту...");
+        String apiUrl = API_URL + "?f=check_email&seq=0&email=" + emailAddress + "&sid_token=" + sidToken;
+        String response = getResponseFromUrl(apiUrl);
+        System.out.println("Ответ от API: " + response); // Логирование полного ответа для отладки
+
+        JSONObject jsonResponse = new JSONObject(response);
+        if (jsonResponse.has("list")) {
+          JSONArray emailList = jsonResponse.getJSONArray("list");
+          System.out.println("******************** " + "\033[35m" + "Письма в ящике: [" + emailList.length() + "] " + "\033[0m" + "********************");
+          for (int i = 0; i < emailList.length(); i++) {
+            JSONObject emailItem = emailList.getJSONObject(i);
+            System.out.println("********************** " + "\033[35m" + "Сообщение " + (i + 1) + " из " + emailList.length() + " " + "\033[0m" + "********************** ");
+            System.out.println("\033[31m" + "ID письма: [" + emailItem.getInt("mail_id") + "]" + "\033[0m");
+            System.out.println("От: [" + emailItem.getString("mail_from") + "]");
+            System.out.println("Тема: [" + emailItem.getString("mail_subject") + "]");
+            System.out.println("Сообщение: " + "\033[34m" + getEmailContent(emailItem.getInt("mail_id")) + "\033[0m");
+            if (emailItem.getString("mail_from").endsWith(stopDomain)) {
+              System.out.println("Получено письмо от " + stopDomain + ". Остановка проверки почты.");
+              return; // Выход после получения письма с указанного домена
+            }
+          }
+        } else {
+          System.err.println("Попытка " + attempt + ": Письма не найдены.");
+        }
+        if (attempt < numAttempts) {
+          Thread.sleep(intervalAttempts * 1000L); // Пауза между попытками
+        }
+      }
+      System.err.println("Все попытки проверки почты завершены.");
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  @Test
+  public void test2() {
+    readExistingMail("txlzht+2qlqv6s@grr.la", 1, 5, 5, "target@email.com");
   }
 }

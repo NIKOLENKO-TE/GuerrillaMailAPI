@@ -1,8 +1,10 @@
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -12,7 +14,15 @@ import java.util.Map;
 public class GuerrillaMailAPI {
   private static final String API_URL = "https://api.guerrillamail.com/ajax.php";
   private static String PHPSESSID = null; // Stores the PHPSESSID cookie for subsequent requests
-  private static final String sidToken = null; // Placeholder for a potential SID token (not used in the current code)
+  private static String sidToken = null; // Placeholder for a potential SID token (not used in the current code)
+
+  public static String getSidToken() {
+    return sidToken;
+  }
+
+  public static void setSidToken(String sidToken) {
+    GuerrillaMailAPI.sidToken = sidToken;
+  }
 
   /**
    * Retrieves a new email address from the Guerrilla Mail API.
@@ -28,9 +38,11 @@ public class GuerrillaMailAPI {
       HttpURLConnection connection = setupConnection(apiUrl);
       String response = readResponse(connection);
       JSONObject jsonResponse = new JSONObject(response);
+      //    System.out.println(jsonResponse.toString(2));
+      setSidToken(jsonResponse.getString("sid_token"));
       if (jsonResponse.has("email_addr")) {
         String emailAddress = jsonResponse.getString("email_addr");
-        System.out.println("\033[36m" + "Email Address: " + emailAddress + "\033[0m");
+        System.out.println("\033[35m" + "Email Address: " + "\033[36m" + emailAddress + "\033[0m");
         return emailAddress;
       } else {
         System.err.println("Failed to get email address: " + response);
@@ -41,6 +53,13 @@ public class GuerrillaMailAPI {
     return null;
   }
 
+
+  private static String getUpdatedSidToken() {
+    // Замените это на реальную логику получения актуального sid_token
+    // Возможно, вам нужно будет вызвать метод или API для получения нового токена
+    // Здесь это просто заглушка
+    return sidToken;
+  }
 
   /**
    * Attempts to read emails for a given email address with specified parameters and conditions.
@@ -57,28 +76,38 @@ public class GuerrillaMailAPI {
   public static void readMail(String emailAddress, int startDelay, int numAttempts, int intervalAttempts, String stopDomain) {
     try {
       Thread.sleep(startDelay * 1000L); // Convert to milliseconds
+
       for (int attempt = 1; attempt <= numAttempts; attempt++) {
-        System.out.println("Attempt " + attempt + " to check emails...");
+        System.out.println("Attempt [" + attempt + "] to check emails...");
         String apiUrl = API_URL + "?f=check_email&seq=0&email=" + emailAddress + "&sid_token=" + sidToken;
-        String response = getResponseFromUrl(apiUrl);
+        HttpURLConnection connection = setupConnection(apiUrl);
+        String response = readResponse(connection);
+        printSelectedFieldsFromResponse(response, apiUrl, connection);
         JSONObject jsonResponse = new JSONObject(response);
+
         if (jsonResponse.has("list")) {
           JSONArray emailList = jsonResponse.getJSONArray("list");
-          System.out.println("******************** " + "\033[35m" + "Emails in box: [" + emailList.length() + "] " + "\033[0m" + "********************");
+          System.out.println("******************** " + "\033[35m" + "NEW Emails in box: [" + emailList.length() + "] " + "\033[0m" + "********************");
           for (int i = 0; i < emailList.length(); i++) {
             JSONObject emailItem = emailList.getJSONObject(i);
             System.out.println("********************** " + "\033[35m" + "Message " + (i + 1) + " of " + emailList.length() + " " + "\033[0m" + "********************** ");
-            System.out.println("\033[31m" + "Email ID: [" + emailItem.getInt("mail_id") + "]" + "\033[0m");
-            System.out.println("From: [" + emailItem.getString("mail_from") + "]");
-            System.out.println("Subject: [" + emailItem.getString("mail_subject") + "]");
-            System.out.println("Message: " + "\033[34m" + getEmailContent(emailItem.getInt("mail_id")) + "\033[0m");
+            System.out.println("\033[31m" + "Email ID: " + "\033[0m" + "[" + +emailItem.getInt("mail_id") + "]");
+            System.out.println("\033[37m" + "Timestamp: " + "\033[0m" + "[" + jsonResponse.getLong("ts") + "]");
+
+            // Обновляем sid_token перед созданием ссылки
+            String updatedSidToken = getUpdatedSidToken();
+            printAttachmentLink(emailItem);
+
+            System.out.println("\033[37m" + "From: " + "\033[0m" + "[" + emailItem.getString("mail_from") + "]");
+            System.out.println("\033[37m" + "Subject: " + "\033[0m" + "[" + emailItem.getString("mail_subject") + "]");
+            System.out.println("\033[37m" + "Message:  [" + "\n" + "\033[34m" + getEmailContent(emailItem.getInt("mail_id")) + "\033[0m");
             if (emailItem.getString("mail_from").endsWith(stopDomain)) {
               System.out.println("Email from " + stopDomain + " received. Stopping email check.");
               return; // Exit after receiving email from specified domain
             }
           }
         } else {
-          System.err.println("Attempt " + attempt + ": No emails found.");
+          System.err.println("Attempt " + attempt + ": No new emails found.");
         }
         if (attempt < numAttempts) {
           Thread.sleep(intervalAttempts * 1000L); // Pause between attempts
@@ -89,6 +118,7 @@ public class GuerrillaMailAPI {
       e.printStackTrace();
     }
   }
+
 
   /**
    * Fetches the content of an email by its ID from the Guerrilla Mail API.
@@ -106,6 +136,15 @@ public class GuerrillaMailAPI {
       JSONObject jsonResponse = new JSONObject(response);
       if (jsonResponse.has("mail_body")) {
         String mailBody = jsonResponse.getString("mail_body");
+//        // Вывод информации о вложениях, если они есть
+//        if (jsonResponse.has("att") && jsonResponse.getInt("att") > 0) {
+//          JSONArray attInfoArray = jsonResponse.getJSONArray("att_info");
+//          System.out.println("Attachments:");
+//          for (int i = 0; i < attInfoArray.length(); i++) {
+//            JSONObject attInfo = attInfoArray.getJSONObject(i);
+//            System.out.println("Type: " + attInfo.getString("t") + ", File: " + attInfo.getString("f") + ", Part ID: " + attInfo.getString("p"));
+//          }
+//        }
         return extractTextFromHtml(mailBody); // Extract text from HTML
       } else {
         System.err.println("Failed to fetch email content: " + response);
@@ -147,9 +186,64 @@ public class GuerrillaMailAPI {
         responseBuilder.append(line);
       }
       String response = responseBuilder.toString();
-      System.out.println("Response from " + apiUrl + ": " + response); // Debugging output
       return response;
     }
+  }
+
+  /**
+   * Prints selected fields from a JSON response string.
+   * This method parses a JSON string to extract and print specific fields: "alias", "ts", "sid_token", and "auth".
+   * If any of these fields are present in the JSON object, their values are printed to the console.
+   * The method uses ANSI escape codes to color the output for better readability:
+   * - Purple (\033[35m) for field names.
+   * - Default console color (\033[0m) for field values.
+   *
+   * @param jsonResponse The JSON response string to parse and from which to print the selected fields.
+   */
+  private static void printSelectedFieldsFromResponse(String jsonResponse, String apiUrl, HttpURLConnection connection) {
+    try {
+      System.out.println("\033[35m" + "API_URL: " + "\033[0m" + apiUrl);
+
+      System.out.println("\033[35m" + "HTTP version: " + "\033[0m" + connection.getHeaderField(0) + "\033[0m");
+      System.out.println("\033[35m" + "HTTP date: " + "\033[0m" + connection.getHeaderField(1) + "\033[0m");
+      System.out.println("\033[35m" + "HTTP format: " + "\033[0m" + connection.getHeaderField(2) + "\033[0m");
+      System.out.println("\033[35m" + "HTTP Transfer-Encoding: " + "\033[0m" + connection.getHeaderField(3) + "\033[0m");
+      System.out.println("\033[35m" + "HTTP connection: " + "\033[0m" + connection.getHeaderField(4) + "\033[0m");
+      System.out.println("\033[35m" + "HTTP cache: " + "\033[0m" + connection.getHeaderField(9) + "\033[0m");
+      System.out.println("\033[35m" + "HTTP Request Method: " + "\033[0m" + connection.getRequestMethod() + "\033[0m");
+      System.out.println("\033[35m" + "HTTP Status Code: " + "\033[0m" + connection.getResponseCode() + "\033[0m");
+      System.out.println("\033[35m" + "HTTP Message: " + "\033[0m" + connection.getResponseMessage() + "\033[0m");
+      System.out.println("\033[35m" + "HTTP error code: " + "\033[0m" + connection.getErrorStream() + "\033[0m");
+      JSONObject jsonObject = new JSONObject(jsonResponse);
+      if (jsonObject.has("alias")) {
+        String alias = jsonObject.getString("alias");
+        System.out.println("\033[35m" + "Alias: " + "\033[0m" + alias);
+      }
+      if (jsonObject.has("ts")) {
+        long ts = jsonObject.getLong("ts");
+        System.out.println("\033[35m" + "TS: " + "\033[0m" + ts);
+      }
+      if (jsonObject.has("auth")) {
+        JSONObject auth = jsonObject.getJSONObject("auth");
+        System.out.println("\033[35m" + "Auth: " + "\033[0m" + auth.toString());
+      }
+      if (jsonObject.has("sid_token")) {
+        String sidToken = jsonObject.getString("sid_token");
+        System.out.println("\033[35m" + "SID Token: " + "\033[0m" + sidToken);
+      }
+      if (jsonObject.has("ref_mid")) {
+        String ref_mid = jsonObject.getString("ref_mid");
+        System.out.println("\033[35m" + "ref_mid: " + "\033[0m" + ref_mid.toString());
+      }
+      if (jsonObject.has("size")) {
+        String size = jsonObject.getString("size");
+        System.out.println("\033[35m" + "size: " + "\033[0m" + size.toString());
+      }
+    } catch (JSONException | IOException e) {
+      e.printStackTrace();
+    }
+    // Assuming PHPSESSID is a static field or can be accessed from this context
+    System.out.println("\033[35m" + "PHPSESSID: " + "\033[0m" + PHPSESSID);
   }
 
   /**
@@ -232,27 +326,33 @@ public class GuerrillaMailAPI {
     }
   }
 
-  @Test
-  public void test() {
-    readMail(getEmailAddress(), 1, 50, 5, "target@email.com");
-  }
-  public static boolean setEmailUser(String emailAddress) {
-    String apiUrl = API_URL + "?f=set_email_user&email=" + emailAddress;
+  /**
+   * Deletes an email address from the Guerrilla Mail API.
+   * This method constructs a request to the Guerrilla Mail API to delete the specified email address.
+   * It parses the response to check if the deletion was successful.
+   * If the API call fails or the response indicates an error, an error message is printed.
+   *
+   * @param emailAddress The email address to be deleted.
+   * @return True if the deletion was successful, false otherwise.
+   */
+  public static boolean deleteEmailAddress(String emailAddress) {
+    String apiUrl = API_URL + "?f=forget_me&email_addr=" + emailAddress;
     try {
-      String response = getResponseFromUrl(apiUrl);
-      System.out.println("Response from " + apiUrl + ": " + response); // Логирование полного ответа
+      HttpURLConnection connection = setupConnection(apiUrl);
+      String response = readResponse(connection);
 
-      // Попробуйте парсить ответ как JSON только если он выглядит как JSON
-      if (response.trim().startsWith("{")) {
-        JSONObject jsonResponse = new JSONObject(response);
-        if (jsonResponse.has("success") && jsonResponse.getBoolean("success")) {
-          System.out.println("Email user set successfully.");
-          return true;
-        } else {
-          System.err.println("Failed to set email user: " + response);
-        }
+      // Check for API errors (e.g., HTTP status code)
+      if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+        System.err.println("API Error: " + connection.getResponseCode() + " - " + connection.getResponseMessage());
+        return false;
+      }
+
+      // Check for "true" response
+      if (response.equals("true")) {
+        System.out.println("\033[32m" + "Email address deleted successfully: " + emailAddress + "\033[0m");
+        return true;
       } else {
-        System.err.println("Unexpected response format: " + response);
+        System.err.println("Failed to delete email address: " + response);
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -260,67 +360,142 @@ public class GuerrillaMailAPI {
     return false;
   }
 
-  /**
-   * Читает письма с существующего почтового ящика.
-   *
-   * @param emailAddress     Существующий почтовый ящик для проверки писем.
-   * @param startDelay       Задержка в секундах перед первой попыткой проверки почты.
-   * @param numAttempts      Количество попыток проверки писем.
-   * @param intervalAttempts Интервал в секундах между попытками проверки почты.
-   * @param stopDomain       Домен, с которого, если получено письмо, метод немедленно прекратит работу.
-   */
-  public static void readExistingMail(String emailAddress, int startDelay, int numAttempts, int intervalAttempts, String stopDomain) {
-    if (emailAddress == null || emailAddress.isEmpty()) {
-      System.err.println("Неверный адрес электронной почты. Не удается проверить почту.");
-      return;
-    }
 
+  public static void readMailNewUser(String emailUser, int startDelay, int numAttempts, int intervalAttempts, String stopDomain) {
     try {
-      Thread.sleep(startDelay * 1000L); // Конвертировать в миллисекунды
+      // Регистрация нового имени пользователя
+      String setEmailUserUrl = API_URL + "?f=set_email_user&email_user=" + emailUser.split("@")[0] + "&lang=en";
 
-      // Установить почтовый ящик (может потребоваться, если API требует этого шага)
-      if (!setEmailUser(emailAddress)) {
-        System.err.println("Не удалось установить почтовый ящик. Выход.");
-        return;
-      }
+      HttpURLConnection connection = setupConnection(setEmailUserUrl);
+      String response = readResponse(connection);
+      JSONObject jsonResponse = new JSONObject(response);
+      String emailAddress = jsonResponse.getString("email_addr");
+      String sidToken = jsonResponse.getString("sid_token");
+      setSidToken(sidToken);
 
+      System.out.println("\033[35m" + "Registered Email Address: " + "\033[36m" + emailAddress + "\033[0m");
+      printSelectedFieldsFromResponse(response, setEmailUserUrl, connection);
+      // Pause before starting mail checking
+      Thread.sleep(startDelay * 1000L);
+
+      // Mail Validation
       for (int attempt = 1; attempt <= numAttempts; attempt++) {
-        System.out.println("Попытка " + attempt + " проверить почту...");
-        String apiUrl = API_URL + "?f=check_email&seq=0&email=" + emailAddress + "&sid_token=" + sidToken;
-        String response = getResponseFromUrl(apiUrl);
-        System.out.println("Ответ от API: " + response); // Логирование полного ответа для отладки
-
-        JSONObject jsonResponse = new JSONObject(response);
-        if (jsonResponse.has("list")) {
-          JSONArray emailList = jsonResponse.getJSONArray("list");
-          System.out.println("******************** " + "\033[35m" + "Письма в ящике: [" + emailList.length() + "] " + "\033[0m" + "********************");
-          for (int i = 0; i < emailList.length(); i++) {
-            JSONObject emailItem = emailList.getJSONObject(i);
-            System.out.println("********************** " + "\033[35m" + "Сообщение " + (i + 1) + " из " + emailList.length() + " " + "\033[0m" + "********************** ");
-            System.out.println("\033[31m" + "ID письма: [" + emailItem.getInt("mail_id") + "]" + "\033[0m");
-            System.out.println("От: [" + emailItem.getString("mail_from") + "]");
-            System.out.println("Тема: [" + emailItem.getString("mail_subject") + "]");
-            System.out.println("Сообщение: " + "\033[34m" + getEmailContent(emailItem.getInt("mail_id")) + "\033[0m");
-            if (emailItem.getString("mail_from").endsWith(stopDomain)) {
-              System.out.println("Получено письмо от " + stopDomain + ". Остановка проверки почты.");
-              return; // Выход после получения письма с указанного домена
-            }
-          }
+        System.out.println("\033[33m" + "Attempt [" + attempt + "] to check emails for [" + emailAddress + "]" + "\033[0m");
+        String checkEmailUrl = API_URL + "?f=check_email&seq=0&sid_token=" + sidToken;
+        connection = setupConnection(checkEmailUrl);
+        response = readResponse(connection);
+        jsonResponse = new JSONObject(response);
+        JSONArray emailList = jsonResponse.getJSONArray("list");
+        if (emailList.length() < 1) {
+          System.out.println("\033[36m" + "No new emails found" + "\033[0m");
         } else {
-          System.err.println("Попытка " + attempt + ": Письма не найдены.");
+          System.out.println("Received " + emailList.length() + " emails.");
         }
+// TODO: Print the response for debugging
+//        System.out.println("Response: " + jsonResponse.toString(2));
+//        System.out.println(emailList);
+        for (int i = 0; i < emailList.length(); i++) {
+          JSONObject email = emailList.getJSONObject(i);
+          System.out.println("********************** " + "\033[35m" + "Message " + (i + 1) + " of " + emailList.length() + " " + "\033[0m" + "********************** ");
+          System.out.println("\033[31m" + "Email ID: " + "\033[0m" + "[" + email.getInt("mail_id") + "]");
+          System.out.println("\033[37m" + "Timestamp: " + "\033[0m" + email.getLong("mail_timestamp"));
+
+          // Check for attachment
+          if (email.has("att") && email.getLong("att") > 0) {
+            System.out.println("\033[37m" + "Attachment: " + "\033[0m" + "[" + email.getLong("att") + "]");
+            printAttachmentLink(email); // Call method to print attachment link
+          }
+          System.out.println("\033[37m" + "From: " + "\033[0m" + "[" + email.getString("mail_from") + "]");
+          System.out.println("\033[37m" + "Subject: " + "\033[0m" + "[" + email.getString("mail_subject") + "]");
+          String emailContent = getEmailContent(email.getInt("mail_id"));
+          System.out.println("\033[37m" + "Message: \n" + "\033[34m" + emailContent + "\033[0m");
+          if (email.getString("mail_from").endsWith(stopDomain)) {
+            System.out.println("Email from " + stopDomain + " received. Stopping email check.");
+            return;
+          }
+        }
+
         if (attempt < numAttempts) {
-          Thread.sleep(intervalAttempts * 1000L); // Пауза между попытками
+          Thread.sleep(intervalAttempts * 1000L);
         }
       }
-      System.err.println("Все попытки проверки почты завершены.");
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
+  private static void printAttachmentLink2(JSONObject email) {
+    int emailId = email.getInt("mail_id");
+    String apiUrl = "https://www.guerrillamail.com/inbox?get_att&email_id=" + emailId + "&sid_token=" + sidToken;
+    try {
+      String response = getResponseFromUrl(apiUrl);
+      JSONObject jsonResponse = new JSONObject(response);
+      if (jsonResponse.has("mail_body")) {
+        if (jsonResponse.has("att") && jsonResponse.getInt("att") > 0) {
+          System.out.println("\033[37m" + "Attachments:" + "\033[0m" + " [" + jsonResponse.getInt("att") + "]");
+          JSONArray attInfoArray = jsonResponse.getJSONArray("att_info");
+          for (int i = 0; i < attInfoArray.length(); i++) {
+            JSONObject attInfo = attInfoArray.getJSONObject(i);
+            String fileType = attInfo.getString("t");
+            String fileName = attInfo.getString("f");
+            String partId = attInfo.getString("p");
+            String attachmentUrl = "https://www.guerrillamail.com/inbox?get_att&email_id=" + emailId + "&part_id=" + partId;
+            //System.out.println("Type: " + fileType + ", File: " + fileName + ", Part ID: " + partId);
+            System.out.println("\033[37m" + "Download Link [" + (i + 1) + "]: " + attachmentUrl + "\033[0m" + "\033[37m" + ", File name:[" + "\033[0m" + fileName + "\033[37m" + "]" + "\033[0m");
+          }
+        } else {
+          System.out.println("\033[37m" + "Attachments:" + "\033[0m" + " [No attachments found]");
+        }
+      } else {
+        System.err.println("Failed to fetch email content: " + response);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+  private static void printAttachmentLink(JSONObject email) {
+    int emailId = email.getInt("mail_id");
+    String apiUrl = API_URL + "?f=fetch_email&email_id=" + emailId + "&sid_token=" + getSidToken();
+    try {
+      String response = getResponseFromUrl(apiUrl);
+      JSONObject jsonResponse = new JSONObject(response);
+      // System.out.println("API Response for email " + emailId + ": " + jsonResponse.toString(2)); // Логирование ответа API
+
+      if (jsonResponse.has("mail_body")) {
+        if (jsonResponse.has("att") && jsonResponse.getInt("att") > 0) {
+          System.out.println("\033[37m" + "Attachments:" + "\033[0m" + " [" + jsonResponse.getInt("att") + "]");
+          JSONArray attInfoArray = jsonResponse.getJSONArray("att_info");
+          for (int i = 0; i < attInfoArray.length(); i++) {
+            JSONObject attInfo = attInfoArray.getJSONObject(i);
+            String fileType = attInfo.getString("t");
+            String fileName = attInfo.getString("f");
+            String partId = attInfo.getString("p");
+            String attachmentUrl = "https://www.guerrillamail.com/inbox?get_att&email_id=" + emailId + "&part_id=" + partId + "&sid_token=" + getSidToken();
+
+            // Дополнительное логирование
+            //System.out.println("Attachment Info - File Type: " + fileType + ", File Name: " + fileName + ", Part ID: " + partId);
+            System.out.println("\033[37m" + "Download Link " + "\033[0m" + "[" + (i + 1) + "]: " + attachmentUrl + "\033[37m" + ", File name:[" + "\033[0m" + fileName + "\033[37m" + "]" + "\033[0m");
+          }
+        } else {
+          System.out.println("\033[37m" + "Attachments:" + "\033[0m" + " [No attachments found]");
+        }
+      } else {
+        System.err.println("Failed to fetch email content: " + response);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
+
+  @Test
+  public void test1() {
+    readMail(getEmailAddress(), 10, 5, 20, "target@email.com");
+  }
+
   @Test
   public void test2() {
-    readExistingMail("txlzht+2qlqv6s@grr.la", 1, 5, 5, "target@email.com");
+    readMailNewUser("msyyppnz@guerrillamailblock.com", 1, 5, 10, "target@email.com");
   }
 }

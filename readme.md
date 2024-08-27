@@ -29,7 +29,7 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/NIKOLENKO-TE/read_random_email.git
+    git clone https://github.com/NIKOLENKO-TE/GuerrillaMailAPI.git
     ```
 
 2. **Navigate to the project directory:**

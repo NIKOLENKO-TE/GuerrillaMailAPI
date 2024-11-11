@@ -125,7 +125,7 @@ public class Main {
 The project includes a few tests to demonstrate the usage of the API. You can run the tests using Gradle:
 
 ```sh
-./gradlew test
+./gradlew GuerrillaMailAPI
 ```
 
 ## 🧪 Tests
@@ -218,7 +218,7 @@ https://api.guerrillamail.com/ajax.php?f=get_email_address&lang=en&site=guerrill
 **Response:**
 ```json
 {
-   "email_addr":"test@guerrillamailblock.com",
+   "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
    "email_timestamp":1405770047,
    "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
@@ -237,13 +237,13 @@ Sets a new email address or extends the current one.
 
 **Example Request:**
 ```
-https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user=test&site=guerrillamail.com&lang=en&sid_token=lmmb0hfqa6qjoduvr2vdenas62
+https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user=GuerrillaMailAPI&site=guerrillamail.com&lang=en&sid_token=lmmb0hfqa6qjoduvr2vdenas62
 ```
 
 **Response:**
 ```json
 {
-   "email_addr":"test@guerrillamailblock.com",
+   "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
    "email_timestamp":1405770047,
    "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
@@ -278,7 +278,7 @@ https://api.guerrillamail.com/ajax.php?f=check_email&seq=0&sid_token=lmmb0hfqa6q
       }
    ],
    "count":"1",
-   "email":"test@guerrillamailblock.com",
+   "email":"GuerrillaMailAPI@guerrillamailblock.com",
    "sid_token":"jogbasvjjes145uej10hv70v67"
 }
 ```
@@ -313,7 +313,7 @@ https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token=lmmb0
       }
    ],
    "count":"1",
-   "email":"test@guerrillamailblock.com",
+   "email":"GuerrillaMailAPI@guerrillamailblock.com",
    "sid_token":"jogbasvjjes145uej10hv70v67"
 }
 ```
@@ -337,7 +337,7 @@ https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=23518264&sid_token
 {
    "mail_id":"23518264",
    "mail_from":"bounce1@worldlargestsafelist.com",
-   "mail_recipient":"test@guerrillamailblock.com",
+   "mail_recipient":"GuerrillaMailAPI@guerrillamailblock.com",
    "mail_subject":"MULTIPLY Your Traffic, Leads & Subscribers to INFINITY!",
    "mail_excerpt":"Aloha from beautiful Hawai`i ...",
    "mail_body":"The message part of the email.",
@@ -360,7 +360,7 @@ Forgets the current email address but keeps the session active.
 
 **Example Request:**
 ```
-https://api.guerrillamail.com/ajax.php?f=forget_me&email_addr=test@guerrillamailblock.com&sid_token=lmmb0hfqa6qjoduvr2vdenas62
+https://api.guerrillamail.com/ajax.php?f=forget_me&email_addr=GuerrillaMailAPI@guerrillamailblock.com&sid_token=lmmb0hfqa6qjoduvr2vdenas62
 ```
 
 **Response:**
@@ -412,7 +412,7 @@ sid_token=lmmb0hfqa6qjoduvr2vdenas62
    "list":[
       {
          "mail_id":"23456789",
-         "mail_from":"test@example.com",
+         "mail_from":"GuerrillaMailAPI@example.com",
          "mail_subject":"Older Email",
          "mail_excerpt":"This is an older email.",
          "mail_timestamp":"1423958500",
@@ -421,7 +421,7 @@ sid_token=lmmb0hfqa6qjoduvr2vdenas62
       }
    ],
    "count":"1",
-   "email":"test@guerrillamailblock.com",
+   "email":"GuerrillaMailAPI@guerrillamailblock.com",
    "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
 ```

@@ -17,6 +17,13 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 
 - **Retrieve a new email address**: Get a fresh temporary email address from Guerrilla Mail.
 - **Check inbox for new emails**: Check the inbox for new emails with configurable retry attempts and intervals.
+  - **Parameters for `readFromRandomEmail`**:
+    - `emailAddress`: The email address to check.
+    - `startDelay`: Initial delay before starting the email check (in seconds).
+    - `numAttempts`: Number of attempts to check the email.
+    - `intervalAttempts`: Interval between attempts (in seconds).
+    - `stopDomain`: Domain to stop checking at.
+    - `debug`: Flag to enable debug messages (true/false).
 - **Fetch email content**: Retrieve the content of an email by its ID.
 - **Delete emails**: Delete a single email or all emails on an account.
 
@@ -57,14 +64,22 @@ public class Main {
 ```
 
 ### 📋 Check Inbox for New Emails
+#### Parameters for `readFromRandomEmail`
 
+- `emailAddress`: The email address to check.
+- `startDelay`: Initial delay before starting the email check (in seconds).
+- `numAttempts`: Number of attempts to check the email.
+- `intervalAttempts`: Interval between attempts (in seconds).
+- `stopDomain`: Domain to stop checking at.
+- `debug`: Flag to enable debug messages (true/false).
+```
 To check the inbox for new emails:
 
 ```java
 public class Main {
     public static void main(String[] args) {
         String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
-        GuerrillaMailAPI.readFromRandomEmail(emailAddress, 1, 5, 20, "stop@email.com");
+        GuerrillaMailAPI.readFromRandomEmail(emailAddress, 1, 5, 20, "stop@email.com", false);
     }
 }
 ```
@@ -92,9 +107,7 @@ To delete a single email:
 public class Main {
     public static void main(String[] args) {
         String emailToDelete = "portishead@guerrillamailblock.com";
-        String sidTokenEmailToDelete = GuerrillaMailAPI.getSessionData(emailToDelete);
-        int emailId = GuerrillaMailAPI.getEmailId(emailToDelete, sidTokenEmailToDelete);
-        GuerrillaMailAPI.deleteEmail(emailId, sidTokenEmailToDelete);
+        GuerrillaMailAPI.deleteEmail(GuerrillaMailAPI.getEmailId(emailToDelete), emailToDelete);
     }
 }
 ```
@@ -106,8 +119,7 @@ To delete all emails on an account:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String sidTokenAccountToDelete = GuerrillaMailAPI.getSessionData("portishead@guerrillamailblock.com");
-        GuerrillaMailAPI.deleteAllEmails(sidTokenAccountToDelete);
+        GuerrillaMailAPI.deleteAllEmails("portishead@guerrillamailblock.com");
     }
 }
 ```
@@ -125,7 +137,7 @@ public class Main {
 The project includes a few tests to demonstrate the usage of the API. You can run the tests using Gradle:
 
 ```sh
-./gradlew GuerrillaMailAPI
+./gradlew test
 ```
 
 ## 🧪 Tests
@@ -137,7 +149,7 @@ The project includes a few tests to demonstrate the usage of the API. You can ru
 public void createRandomAccount() {
     String randomEmailAddress = GuerrillaMailAPI.getRandomEmailAddress();
     System.out.println("Generated Random Email: " + randomEmailAddress);
-    GuerrillaMailAPI.readFromRandomEmail(randomEmailAddress, 1, 5, 20, "stop@email.com");
+    GuerrillaMailAPI.readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@email.com", false);
 }
 ```
 
@@ -146,9 +158,9 @@ public void createRandomAccount() {
 ```java
 @Test
 public void createNewAccount() {
-    String specificEmailAddress = "portishead@guerrillamailblock.com";
+    String specificEmailAddress = "portishead9@guerrillamailblock.com";
     System.out.println("Using Specific Email: " + specificEmailAddress);
-    GuerrillaMailAPI.readFromIndividualEmail(specificEmailAddress, 1, 5, 10, "stop@email.com");
+    GuerrillaMailAPI.readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@email.com", false);
 }
 ```
 
@@ -157,9 +169,8 @@ public void createNewAccount() {
 ```java
 @Test
 public void deleteOneEMail() {
-    String emailToDelete = "portishead@guerrillamailblock.com";
-    String sidTokenEmailToDelete = GuerrillaMailAPI.getSessionData(emailToDelete);
-    GuerrillaMailAPI.deleteEmail(GuerrillaMailAPI.getEmailId(emailToDelete, sidTokenEmailToDelete), sidTokenEmailToDelete);
+    String emailToDelete = "portishead9@guerrillamailblock.com";
+    GuerrillaMailAPI.deleteEmail(GuerrillaMailAPI.getEmailId(emailToDelete), emailToDelete);
 }
 ```
 
@@ -168,8 +179,7 @@ public void deleteOneEMail() {
 ```java
 @Test
 public void deleteAllEmailsOnAccount() {
-    String sidTokenAccountToDelete = GuerrillaMailAPI.getSessionData("portishead@guerrillamailblock.com");
-    GuerrillaMailAPI.deleteAllEmails(sidTokenAccountToDelete);
+    GuerrillaMailAPI.deleteAllEmails("portishead9@guerrillamailblock.com");
 }
 ```
 
@@ -180,7 +190,6 @@ Feel free to contribute to this project by submitting a pull request or opening 
 ---
 
 ## Guerrilla Mail JSON API Documentation
-
 
 ### Introduction
 
@@ -218,9 +227,9 @@ https://api.guerrillamail.com/ajax.php?f=get_email_address&lang=en&site=guerrill
 **Response:**
 ```json
 {
-   "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
-   "email_timestamp":1405770047,
-   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
+  "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email_timestamp":1405770047,
+  "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
 ```
 
@@ -243,9 +252,9 @@ https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user=GuerrillaMail
 **Response:**
 ```json
 {
-   "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
-   "email_timestamp":1405770047,
-   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
+  "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email_timestamp":1405770047,
+  "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
 ```
 
@@ -266,20 +275,20 @@ https://api.guerrillamail.com/ajax.php?f=check_email&seq=0&sid_token=lmmb0hfqa6q
 **Response:**
 ```json
 {
-   "list":[
-      {
-         "mail_id":"23518194",
-         "mail_from":"info@brahminmatrimony.com",
-         "mail_subject":"Ravi Shastri, You have 50 potential matches",
-         "mail_excerpt":"You have not viewed these profiles in detail.",
-         "mail_timestamp":"1423958802",
-         "mail_read":"0",
-         "mail_date":"00:06:42"
-      }
-   ],
-   "count":"1",
-   "email":"GuerrillaMailAPI@guerrillamailblock.com",
-   "sid_token":"jogbasvjjes145uej10hv70v67"
+  "list":[
+    {
+      "mail_id":"23518194",
+      "mail_from":"info@brahminmatrimony.com",
+      "mail_subject":"Ravi Shastri, You have 50 potential matches",
+      "mail_excerpt":"You have not viewed these profiles in detail.",
+      "mail_timestamp":"1423958802",
+      "mail_read":"0",
+      "mail_date":"00:06:42"
+    }
+  ],
+  "count":"1",
+  "email":"GuerrillaMailAPI@guerrillamailblock.com",
+  "sid_token":"jogbasvjjes145uej10hv70v67"
 }
 ```
 
@@ -301,20 +310,20 @@ https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token=lmmb0
 **Response:**
 ```json
 {
-   "list":[
-      {
-         "mail_id":"23518264",
-         "mail_from":"bounce1@worldlargestsafelist.com",
-         "mail_subject":"MULTIPLY Your Traffic, Leads & Subscribers to INFINITY!",
-         "mail_excerpt":"Aloha from beautiful Hawai`i ...",
-         "mail_timestamp":"1423959105",
-         "mail_read":"0",
-         "mail_date":"00:11:45"
-      }
-   ],
-   "count":"1",
-   "email":"GuerrillaMailAPI@guerrillamailblock.com",
-   "sid_token":"jogbasvjjes145uej10hv70v67"
+  "list":[
+    {
+      "mail_id":"23518264",
+      "mail_from":"bounce1@worldlargestsafelist.com",
+      "mail_subject":"MULTIPLY Your Traffic, Leads & Subscribers to INFINITY!",
+      "mail_excerpt":"Aloha from beautiful Hawai`i ...",
+      "mail_timestamp":"1423959105",
+      "mail_read":"0",
+      "mail_date":"00:11:45"
+    }
+  ],
+  "count":"1",
+  "email":"GuerrillaMailAPI@guerrillamailblock.com",
+  "sid_token":"jogbasvjjes145uej10hv70v67"
 }
 ```
 
@@ -335,17 +344,17 @@ https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=23518264&sid_token
 **Response:**
 ```json
 {
-   "mail_id":"23518264",
-   "mail_from":"bounce1@worldlargestsafelist.com",
-   "mail_recipient":"GuerrillaMailAPI@guerrillamailblock.com",
-   "mail_subject":"MULTIPLY Your Traffic, Leads & Subscribers to INFINITY!",
-   "mail_excerpt":"Aloha from beautiful Hawai`i ...",
-   "mail_body":"The message part of the email.",
-   "mail_timestamp":"1423959105",
-   "mail_date":"00:11:45",
-   "mail_read":"0",
-   "content_type":"text/html",
-   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
+  "mail_id":"23518264",
+  "mail_from":"bounce1@worldlargestsafelist.com",
+  "mail_recipient":"GuerrillaMailAPI@guerrillamailblock.com",
+  "mail_subject":"MULTIPLY Your Traffic, Leads & Subscribers to INFINITY!",
+  "mail_excerpt":"Aloha from beautiful Hawai`i ...",
+  "mail_body":"The message part of the email.",
+  "mail_timestamp":"1423959105",
+  "mail_date":"00:11:45",
+  "mail_read":"0",
+  "content_type":"text/html",
+  "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
 ```
 
@@ -385,7 +394,7 @@ https://api.guerrillamail.com/ajax.php?f=del_email&sid_token=lmmb0hfqa6qjoduvr2v
 **Response:**
 ```json
 {
-   "deleted_ids":[425,426,427]
+  "deleted_ids":[425,426,427]
 }
 ```
 
@@ -401,28 +410,26 @@ Fetches emails with IDs lower than the specified `seq`.
 
 **Example Request:**
 ```
-https://api.guerrillamail.com/ajax.php?f=get_older_list&seq=1000&limit=10&
-
-sid_token=lmmb0hfqa6qjoduvr2vdenas62
+https://api.guerrillamail.com/ajax.php?f=get_older_list&seq=1000&limit=10&sid_token=lmmb0hfqa6qjoduvr2vdenas62
 ```
 
 **Response:**
 ```json
 {
-   "list":[
-      {
-         "mail_id":"23456789",
-         "mail_from":"GuerrillaMailAPI@example.com",
-         "mail_subject":"Older Email",
-         "mail_excerpt":"This is an older email.",
-         "mail_timestamp":"1423958500",
-         "mail_read":"1",
-         "mail_date":"00:00:00"
-      }
-   ],
-   "count":"1",
-   "email":"GuerrillaMailAPI@guerrillamailblock.com",
-   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
+  "list":[
+    {
+      "mail_id":"23456789",
+      "mail_from":"GuerrillaMailAPI@example.com",
+      "mail_subject":"Older Email",
+      "mail_excerpt":"This is an older email.",
+      "mail_timestamp":"1423958500",
+      "mail_read":"1",
+      "mail_date":"00:00:00"
+    }
+  ],
+  "count":"1",
+  "email":"GuerrillaMailAPI@guerrillamailblock.com",
+  "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
 ```
 
@@ -436,8 +443,8 @@ API responses include an error field in case of invalid requests. Common errors 
 **Example Error Response:**
 ```json
 {
-   "error_code": 400,
-   "error_message": "Invalid parameter 'site'."
+  "error_code": 400,
+  "error_message": "Invalid parameter 'site'."
 }
 ```
 
@@ -448,3 +455,4 @@ API responses include an error field in case of invalid requests. Common errors 
 For more detailed usage, refer to the API's interactive documentation at [HomePage Guerrillamail.com](https://www.guerrillamail.com/).
 
 ---
+```

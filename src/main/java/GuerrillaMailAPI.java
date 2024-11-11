@@ -673,7 +673,21 @@ public class GuerrillaMailAPI {
         }
     }
 
-    // Метод для печати ссылки на вложение в электронном письме:
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Метод для печати ссылки на вложение в электронном письме.</code><br>
+     * Этот метод использует ID письма для запроса его содержимого через Guerrilla Mail API. Если письмо содержит вложения,
+     * метод выводит ссылки для скачивания, имя файла и тип файла. Включает сообщения отладки, если параметр debug установлен в true.<br>
+     * </p>
+     * <strong>English:</strong><br>
+     * <code>Method for printing the attachment link in an email.</code><br>
+     * This method uses the email ID to fetch the content through the Guerrilla Mail API. If the email has attachments,
+     * it prints the download links, file name, and file type. Debug messages are shown if the debug parameter is set to true.<br>
+     * </p>
+     *
+     * @param email the email object containing email details <code>(объект письма с деталями письма)</code>
+     * @param debug flag to enable debug messages <code>(флаг для включения сообщений отладки)</code>
+     */
     private static void printAttachmentLink(JSONObject email,boolean debug) {
         int emailId = email.getInt("mail_id");
         String apiUrl = API_URL + "?f=fetch_email&email_id=" + emailId + "&sid_token=" + getSidToken();
@@ -682,8 +696,7 @@ public class GuerrillaMailAPI {
             JSONObject jsonResponse = new JSONObject(response);
             if (debug) {
                 // TODO: API response logging
-                print(PURPLE, "API Response for email " + emailId, jsonResponse.toString(2));
-                //System.out.println("API Response for email " + emailId + ": " + jsonResponse.toString(2));
+                print(PURPLE, "Attachment Response for email " + emailId, jsonResponse.toString(2));
             }
             if (jsonResponse.has("mail_body")) {
                 if (jsonResponse.has("att") && jsonResponse.getInt("att") > 0) {
@@ -708,7 +721,21 @@ public class GuerrillaMailAPI {
         }
     }
 
-    // Метод для выполнения GET-запроса к API Guerrilla Mail с целью получения идентификатора электронного письма:
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Метод для выполнения GET-запроса к API Guerrilla Mail с целью получения идентификатора электронного письма.</code><br>
+     * Этот метод устанавливает соединение с указанным URL API, отправляет GET-запрос
+     * и считывает ответ от сервера. В случае ошибки печатает трассировку стека и возвращает null.<br>
+     * </p>
+     * <strong>English:</strong><br>
+     * <code>Method for performing a GET request to the Guerrilla Mail API to fetch the email ID.</code><br>
+     * This method establishes a connection to the specified API URL, sends a GET request,
+     * and reads the response from the server. In case of an error, it prints the stack trace and returns null.<br>
+     * </p>
+     *
+     * @param apiUrl the URL to which the GET request is sent <code>(URL, по которому отправляется GET-запрос)</code>
+     * @return the response from the server as a String, or null if an exception occurs <code>(ответ от сервера в виде строки или null в случае ошибки)</code>
+     */
     private static String performGetRequest(String apiUrl) {
         try {
             HttpURLConnection connection = setupConnection(apiUrl);
@@ -719,7 +746,24 @@ public class GuerrillaMailAPI {
         }
     }
 
-    // Метод для получения идентификатора электронного письма по адресу электронной почты:
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Метод для получения ID электронного письма по адресу электронной почты.</code><br>
+     * Этот метод использует указанный адрес электронной почты для получения sidToken, после чего отправляет запрос к API Guerrilla Mail,
+     * чтобы получить список электронных писем. Если список не пустой, возвращается идентификатор первого письма.
+     * В случае ошибки или пустого ответа возвращает -1.
+     *
+     * <br>
+     *
+     * <strong>English:</strong><br>
+     * <code>Method to fetch the email ID using an email address.</code><br>
+     * This method uses the provided email address to get the sidToken, then sends a request to the Guerrilla Mail API
+     * to retrieve the list of emails. If the list is not empty, it returns the ID of the first email.
+     * Returns -1 in case of an error or an empty response.
+     *
+     * @param emailAddress <code>адрес электронной почты для получения ID</code> (the email address to fetch the ID for)
+     * @return <code>ID первого электронного письма или -1 в случае ошибки</code> (the ID of the first email, or -1 if an error occurs)
+     */
     public static int getEmailId(String emailAddress) {
         String sidToken = getSessionData(emailAddress);
         String apiUrl = API_URL + "?f=check_email&sid_token=" + sidToken + "&seq=20";
@@ -740,24 +784,70 @@ public class GuerrillaMailAPI {
         return -1;
     }
 
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Тест для создания случайного почтового аккаунта с использованием Guerrilla Mail и проверки входящих писем.</code><br>
+     * Этот метод генерирует случайный адрес электронной почты через API Guerrilla Mail и инициирует процесс проверки
+     * входящих писем на этот адрес. Выполняется указанное количество попыток с заданным интервалом, а также проверка,
+     * есть ли письма с домена, при котором проверка должна быть остановлена. Можно включить или отключить режим отладки.
+     *
+     * <strong>English:</strong><br>
+     * <code>Test method to create a random email account using Guerrilla Mail and check for incoming emails.</code><br>
+     * This method generates a random email address via the Guerrilla Mail API and initiates the process of checking
+     * for incoming emails on that address. It performs the specified number of attempts with a given interval
+     * and checks if any email matches a specified stop domain. Debugging mode can be toggled on or off.
+     */
     @Test
     public void createRandomAccount() {
         String randomEmailAddress = GuerrillaMailAPI.getRandomEmailAddress();
         readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@email.com", false);
     }
 
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Тест создания нового почтового аккаунта с использованием конкретного адреса электронной почты, который вы можете задать самостоятельно.</code><br>
+     * Этот метод использует указанный адрес электронной почты и вызывает метод для проверки входящих писем. Выполняется указанное
+     * количество попыток с заданным интервалом между ними. Также проверяется, есть ли письма с домена, при котором проверка
+     * должна быть остановлена. Возможность включения режима отладки.
+     *
+     * <strong>English:</strong><br>
+     * <code>Test method to create a new email account using a specific email address.</code><br>
+     * This method uses the given email address and calls the method to check incoming emails. It performs the specified
+     * number of attempts with a set interval between them. It also checks for emails from a stop domain to halt the check.
+     * Debugging mode can be enabled or disabled.
+     */
     @Test
     public void createNewAccount() {
         String specificEmailAddress = "portishea9@guerrillamailblock.com";
         readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@email.com", false);
     }
 
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Тест удаления первого электронного письма по заданному адресу.</code><br>
+     * Этот метод использует указанный адрес электронной почты для получения его идентификатора и затем вызывает метод для
+     * удаления письма с полученным идентификатором.
+     *
+     * <strong>English:</strong><br>
+     * <code>Test  to delete first email using a specified email address.</code><br>
+     * This method uses the provided email address to fetch its ID and then calls the method to delete the email with the
+     * fetched ID.
+     */
     @Test
     public void deleteOneEMail() {
         String emailToDelete = "portishead9@guerrillamailblock.com";
         deleteEmail(getEmailId(emailToDelete), emailToDelete);
     }
 
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Тест удаления всех электронных писем на указанном адресе электронной почты.</code><br>
+     * Этот метод вызывает функцию удаления всех писем на аккаунте, используя заданный адрес электронной почты.
+     *
+     * <strong>English:</strong><br>
+     * <code>Test method to delete all emails on the specified email address.</code><br>
+     * This method calls the function to delete all emails on the account using the provided email address.
+     */
     @Test
     public void deleteAllEmailsOnAccount() {
         deleteAllEmails("portishead9@guerrillamailblock.com");

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 /**
@@ -291,6 +293,13 @@ public class GuerrillaMailAPI {
    */
   public static void deleteEmail(int emailId, String sidToken) {
     try {
+      // Fetch email details before deletion
+      String fetchEmailUrl = API_URL + "?f=fetch_email&email_id=" + emailId + "&sid_token=" + sidToken;
+      HttpURLConnection fetchConnection = setupConnection(fetchEmailUrl);
+      String fetchResponse = readResponse(fetchConnection);
+      JSONObject fetchJsonResponse = new JSONObject(fetchResponse);
+
+      // Proceed with deletion
       String apiUrl = API_URL + "?f=del_email&email_ids[]=" + emailId + "&sid_token=" + sidToken;
       HttpURLConnection connection = setupConnection(apiUrl);
       String response = readResponse(connection);
@@ -298,12 +307,56 @@ public class GuerrillaMailAPI {
       if (jsonResponse.has("deleted_ids")) {
         JSONArray deletedIds = jsonResponse.getJSONArray("deleted_ids");
         if (deletedIds.length() > 0 && !"0".equals(deletedIds.getString(0))) {
-          System.out.println(RED + "Email deleted successfully: " + RESET);
+          // Print email details along with success message
+          String emailFrom = fetchJsonResponse.getString("mail_from");
+          String emailSubject = fetchJsonResponse.getString("mail_subject");
+          String emailDateStr = fetchJsonResponse.getString("mail_date");
+          String emailBody = extractTextFromHtml(fetchJsonResponse.getString("mail_body"));
+
+          // Parse and format the date
+          String formattedDate = "Invalid date (template email?)";
+          if (emailDateStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+            Date emailDate = inputFormat.parse(emailDateStr);
+            formattedDate = outputFormat.format(emailDate);
+          }
+
+          print(GREEN, "Email успешно удалён", "ID: " + emailId);
+          print(PURPLE, "От", emailFrom);
+          print(PURPLE, "Тема", emailSubject);
+          print(PURPLE, "Дата", formattedDate);
+          print(PURPLE, "Текст", emailBody);
         } else {
-          System.err.println("Failed to delete email or email ID not found: " + response);
+          print(RED, "Не удалось удалить email или email ID не найден", response);
         }
       } else {
-        System.err.println("Failed to delete email!" + response);
+        print(RED, "Не удалось удалить email", response);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+  public static void deleteAllEmails(String sidToken) {
+    try {
+      // Fetch the list of all email IDs
+      String fetchEmailListUrl = API_URL + "?f=get_email_list&offset=0&sid_token=" + sidToken;
+      HttpURLConnection fetchConnection = setupConnection(fetchEmailListUrl);
+      String fetchResponse = readResponse(fetchConnection);
+      JSONObject fetchJsonResponse = new JSONObject(fetchResponse);
+
+      if (fetchJsonResponse.has("list")) {
+        JSONArray emailList = fetchJsonResponse.getJSONArray("list");
+
+        for (int i = 0; i < emailList.length(); i++) {
+          JSONObject email = emailList.getJSONObject(i);
+          int emailId = email.getInt("mail_id");
+
+          // Use the deleteEmail method to delete each email
+          deleteEmail(emailId, sidToken);
+        }
+      } else {
+        print(RED, "Не удалось получить список email", fetchResponse);
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -537,7 +590,9 @@ public class GuerrillaMailAPI {
    */
   @Test
   public void createRandomAccount() {
-    readFromRandomEmail(getRandomEmailAddress(), 1, 5, 20, "stop@email.com");
+    String randomEmailAddress = GuerrillaMailAPI.getRandomEmailAddress();
+    System.out.println("Generated Random Email: " + randomEmailAddress);
+    readFromRandomEmail(randomEmailAddress, 1, 5, 20, "stop@email.com");
   }
 
   /**
@@ -553,25 +608,43 @@ public class GuerrillaMailAPI {
    */
   @Test
   public void createNewAccount() {
-    readFromIndividualEmail("portishead@guerrillamailblock.com", 1, 5, 10, "stop@email.com");
+    String specificEmailAddress = "portishead@guerrillamailblock.com";
+    System.out.println("Using Specific Email: " + specificEmailAddress);
+    readFromIndividualEmail(specificEmailAddress, 1, 5, 10, "stop@email.com");
   }
 
   /**
-   * Tests the deletion of an email account.
+   * Tests the deletion of a single email.
    * <p>
    * This test method:
    * <ul>
-   *     <li>Specifies an email address to delete: "portishead5@guerrillamailblock.com".</li>
+   *     <li>Specifies an email address to delete: "portishead@guerrillamailblock.com".</li>
    *     <li>Retrieves the session data (sidToken) associated with the email address.</li>
    *     <li>Calls the {@code deleteEmail} method with the email ID and sidToken to perform the deletion.</li>
    * </ul>
-   * This test ensures that the deletion process works correctly by checking that the specified email account can be successfully deleted.
+   * This test ensures that the deletion process works correctly by checking that the specified email can be successfully deleted.
    */
   @Test
-  public void deleteAccount() {
+  public void deleteOneEMail() {
     String emailToDelete = "portishead@guerrillamailblock.com";
     String sidTokenEmailToDelete = getSessionData(emailToDelete);
     deleteEmail(getEmailId(emailToDelete, sidTokenEmailToDelete), sidTokenEmailToDelete);
   }
 
+  /**
+   * Tests the deletion of all emails on an account.
+   * <p>
+   * This test method:
+   * <ul>
+   *     <li>Specifies an email address to delete all emails from: "portishead@guerrillamailblock.com".</li>
+   *     <li>Retrieves the session data (sidToken) associated with the email address.</li>
+   *     <li>Calls the {@code deleteAllEmails} method with the sidToken to perform the deletion of all emails.</li>
+   * </ul>
+   * This test ensures that the deletion process works correctly by checking that all emails on the specified account can be successfully deleted.
+   */
+  @Test
+  public void deleteAllEmailsOnAccount() {
+    String sidTokenAccountToDelete = getSessionData("portishead@guerrillamailblock.com");
+    deleteAllEmails(sidTokenAccountToDelete);
+  }
 }

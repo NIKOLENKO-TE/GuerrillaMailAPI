@@ -4,20 +4,21 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 
 ## 📋 Table of Contents
 
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Development](#development)
-- [Tests](#tests)
-- [Contributing](#contributing)
+- [Features](#-features)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Examples](#-examples)
+- [Development](#-development)
+- [Tests](#-tests)
+- [Contributing](#-contributing)
 
 ## ✨ Features
 
 - **Retrieve a new email address**: Get a fresh temporary email address from Guerrilla Mail.
 - **Check inbox for new emails**: Check the inbox for new emails with configurable retry attempts and intervals.
 - **Fetch email content**: Retrieve the content of an email by its ID.
+- **Delete emails**: Delete a single email or all emails on an account.
 
 ## 🔧 Prerequisites
 
@@ -38,7 +39,7 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
     cd GuerrillaMailAPI
     ```
 
-3. **Build the project using your preferred build tool (e.g., Maven or Gradle).**
+3. **Build the project using your preferred build tool (e.g., Gradle).**
 
 ## 🚀 Usage
 
@@ -49,7 +50,7 @@ To retrieve a new email address:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getEmailAddress();
+        String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
         System.out.println("Generated Email: " + emailAddress);
     }
 }
@@ -62,8 +63,8 @@ To check the inbox for new emails:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getEmailAddress();
-        GuerrillaMailAPI.checkInbox(emailAddress, 1, 50, 5, "stop@eemail.com");
+        String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
+        GuerrillaMailAPI.readFromRandomEmail(emailAddress, 1, 5, 20, "stop@email.com");
     }
 }
 ```
@@ -75,7 +76,7 @@ To fetch the content of an email by its ID:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getEmailAddress();
+        String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
         int mailId = 123456; // Replace with actual mail ID
         String content = GuerrillaMailAPI.getEmailContent(mailId);
         System.out.println("Email Content: " + content);
@@ -83,84 +84,48 @@ public class Main {
 }
 ```
 
-## 📝 Examples
+### 🗑️ Delete a Single Email
 
-#### Example 1: 🧪 Generate and Print an Email Address
-
-Certainly! Here are the examples in English based on your test cases:
-
-### 🧪 Example 1: Create and Retrieve a Random Email Account
+To delete a single email:
 
 ```java
 public class Main {
     public static void main(String[] args) {
-        // Generate a random email address
-        String randomEmailAddress = GuerrillaMailAPI.getEmailAddress();
-        System.out.println("Generated Random Email: " + randomEmailAddress);
-        
-        // Check inbox for new emails using the generated address
-        GuerrillaMailAPI.checkInbox(randomEmailAddress, 1, 5, 20, "stop@email.com");
-    }
-}
-```
-
-### 🧪 Example 2: Create and Retrieve a Specific Email Account
-
-```java
-public class Main {
-    public static void main(String[] args) {
-        // Use a predefined email address
-        String specificEmailAddress = "portishead@guerrillamailblock.com";
-        System.out.println("Using Specific Email: " + specificEmailAddress);
-        
-        // Check inbox for new emails using the specified address
-        GuerrillaMailAPI.checkInbox(specificEmailAddress, 1, 5, 10, "stop@email.com");
-    }
-}
-```
-
-### 🧪 Example 3: Delete an Email Account
-
-```java
-public class Main {
-    public static void main(String[] args) {
-        // Specify the email address to delete
-        String emailToDelete = "portishead5@guerrillamailblock.com";
-        System.out.println("Email to Delete: " + emailToDelete);
-        
-        // Retrieve the session data (sidToken) for the specified email address
+        String emailToDelete = "portishead@guerrillamailblock.com";
         String sidTokenEmailToDelete = GuerrillaMailAPI.getSessionData(emailToDelete);
-        
-        // Get the email ID and delete the specified email address
         int emailId = GuerrillaMailAPI.getEmailId(emailToDelete, sidTokenEmailToDelete);
         GuerrillaMailAPI.deleteEmail(emailId, sidTokenEmailToDelete);
-        System.out.println("Deleted Email: " + emailToDelete);
     }
 }
 ```
 
-Each example demonstrates how to use the Guerrilla Mail API for different tasks, such as creating and retrieving random and specific email addresses, as well as deleting an email account.
+### 🗑️ Delete All Emails on an Account
+
+To delete all emails on an account:
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        String sidTokenAccountToDelete = GuerrillaMailAPI.getSessionData("portishead@guerrillamailblock.com");
+        GuerrillaMailAPI.deleteAllEmails(sidTokenAccountToDelete);
+    }
+}
+```
 
 ## 🛠️ Development
 
 #### ⚙️ Setup
 
-* Ensure you have **Java** and **Gradle** (or **Maven**) installed.
+* Ensure you have **Java** and **Gradle** installed.
 * Clone the repository.
 * Import the project into your preferred IDE.
 
 ## 🧪 Running Tests
 
-The project includes a few tests to demonstrate the usage of the API. You can run the tests using Gradle or Maven:
-
-For Gradle:
+The project includes a few tests to demonstrate the usage of the API. You can run the tests using Gradle:
 
 ```sh
 ./gradlew test
-```
-or
-```sh
-@Test
 ```
 
 ## 🧪 Tests
@@ -170,9 +135,9 @@ or
 ```java
 @Test
 public void createRandomAccount() {
-    String randomEmailAddress = GuerrillaMailAPI.getEmailAddress();
+    String randomEmailAddress = GuerrillaMailAPI.getRandomEmailAddress();
     System.out.println("Generated Random Email: " + randomEmailAddress);
-    GuerrillaMailAPI.checkInbox(randomEmailAddress, 1, 5, 20, "stop@email.com");
+    GuerrillaMailAPI.readFromRandomEmail(randomEmailAddress, 1, 5, 20, "stop@email.com");
 }
 ```
 
@@ -183,20 +148,28 @@ public void createRandomAccount() {
 public void createNewAccount() {
     String specificEmailAddress = "portishead@guerrillamailblock.com";
     System.out.println("Using Specific Email: " + specificEmailAddress);
-    GuerrillaMailAPI.checkInbox(specificEmailAddress, 1, 5, 10, "stop@email.com");
+    GuerrillaMailAPI.readFromIndividualEmail(specificEmailAddress, 1, 5, 10, "stop@email.com");
 }
 ```
 
-### Test 3: Delete an Email Account
+### Test 3: Delete a Single Email
 
 ```java
 @Test
-public void deleteAccount() {
-    String emailToDelete = "portishead5@guerrillamailblock.com";
+public void deleteOneEMail() {
+    String emailToDelete = "portishead@guerrillamailblock.com";
     String sidTokenEmailToDelete = GuerrillaMailAPI.getSessionData(emailToDelete);
-    int emailId = GuerrillaMailAPI.getEmailId(emailToDelete, sidTokenEmailToDelete);
-    GuerrillaMailAPI.deleteEmail(emailId, sidTokenEmailToDelete);
-    System.out.println("Deleted Email: " + emailToDelete);
+    GuerrillaMailAPI.deleteEmail(GuerrillaMailAPI.getEmailId(emailToDelete, sidTokenEmailToDelete), sidTokenEmailToDelete);
+}
+```
+
+### Test 4: Delete All Emails on an Account
+
+```java
+@Test
+public void deleteAllEmailsOnAccount() {
+    String sidTokenAccountToDelete = GuerrillaMailAPI.getSessionData("portishead@guerrillamailblock.com");
+    GuerrillaMailAPI.deleteAllEmails(sidTokenAccountToDelete);
 }
 ```
 
@@ -472,6 +445,6 @@ API responses include an error field in case of invalid requests. Common errors 
 - Ensure correct usage of tokens and handle expired sessions.
 - API rate limits may apply based on usage patterns.
 
-For more detailed usage, refer to the API's interactive documentation at [https://api.guerrillamail.com](https://api.guerrillamail.com).
+For more detailed usage, refer to the API's interactive documentation at [HomePage Guerrillamail.com](https://www.guerrillamail.com/).
 
 ---

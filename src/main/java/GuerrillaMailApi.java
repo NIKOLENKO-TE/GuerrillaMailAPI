@@ -10,6 +10,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <strong>Русский:</strong><br>
@@ -26,11 +29,11 @@ import java.util.Map;
  * @see <a href="https://www.guerrillamail.com/">Guerrilla Mail General Website</a>
  * @see <a href="https://www.guerrillamail.com/GuerrillaMailAPI.html#fetch_email">Guerrilla Mail API Documentation - fetch_email</a>
  */
-public class GuerrillaMailAPI {
-
+public class GuerrillaMailApi {
+    private static final Logger logger = Logger.getLogger(GuerrillaMailApi.class.getName());
     private static final String API_URL = "https://api.guerrillamail.com/ajax.php";
-    private static String PHPSESSID = null; // Нужен для хранения идентификатора сеанса PHP для доступа к API
-    private static String sidToken = null; // Нужен для хранения токена сеанса для доступа к API
+    private static String PHPSESSID = null; // Needed to store the PHP session ID to access the API
+    private static String sidToken = null; // Needed to store the session token to access the API
     private static final String RESET = "\033[0m";
     private static final String RED = "\033[31m";
     private static final String GREEN = "\033[32m";
@@ -51,7 +54,7 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param color the color to print the key and value (цвет для вывода ключа и значения)
-     * @param key the key to print (ключ для вывода)
+     * @param key   the key to print (ключ для вывода)
      * @param value the value to print (значение для вывода)
      */
     private static void print(String color, String key, String value) {
@@ -63,7 +66,7 @@ public class GuerrillaMailAPI {
     }
 
     public static void setSidToken(String sidToken) {
-        GuerrillaMailAPI.sidToken = sidToken;
+        GuerrillaMailApi.sidToken = sidToken;
     }
 
     /**
@@ -80,7 +83,6 @@ public class GuerrillaMailAPI {
      * @return the {@link JSONObject} <code>response from the API call (JSON-ответ от вызова API)</code>
      * @throws Exception if an error occurs during the API call into a {@link JSONObject} (выбрасывается исключение, если произошла ошибка при вызове API)
      */
-
     private static JSONObject makeApiCall(String url) throws Exception {
         HttpURLConnection connection = setupConnection(url);
         String response = readResponse(connection);
@@ -95,12 +97,13 @@ public class GuerrillaMailAPI {
      * <strong>English:</strong><br>
      * <code>This method pauses the execution of the program for the given number of seconds.</code>
      * </p>
+     *
      * @param seconds the number of seconds to delay the execution
-     *               (количество секунд для задержки выполнения)
+     *                (количество секунд для задержки выполнения)
      * @throws RuntimeException if the thread is interrupted during sleep
      *                          (выбрасывается исключение, если поток был прерван во время сна)
      */
-    private static void delay(int seconds)  {
+    private static void delay(int seconds) {
         try {
             Thread.sleep(seconds * 1000L);
         } catch (InterruptedException e) {
@@ -108,7 +111,8 @@ public class GuerrillaMailAPI {
         }
     }
 
-    /** <strong>Русский:</strong><br>
+    /**
+     * <strong>Русский:</strong><br>
      * <code>Этот метод выводит детали электронного письма, включая ID письма, отправителя, тему и содержание сообщения.</code><br>
      * Если письмо содержит вложения, также будет выведена ссылка на вложения.<br>
      * Если домен отправителя совпадает с указанным доменом остановки, проверка писем прекратится с сообщением.<br>
@@ -119,21 +123,28 @@ public class GuerrillaMailAPI {
      * If the sender's domain matches the given stop domain, the email check will stop with a message.<br>
      * </p>
      *
-     * @param emailItem the email details in a {@link JSONObject} <code>(детали письма в {@link JSONObject})</code>
+     * @param emailItem  the email details in a {@link JSONObject} <code>(детали письма в {@link JSONObject})</code>
      * @param stopDomain the domain after which email check will stop <code>(домен, после которого проверка писем прекратится)</code>
      */
-    private static void printEmailDetails(JSONObject emailItem, String stopDomain,boolean debug) {
-        print(GRAY, "Email ID", emailItem.getInt("mail_id") + "");
-        // print(GRAY, "Timestamp", emailItem.getLong("mail_timestamp") + "");
+    private static void printEmailDetails(JSONObject emailItem, String stopDomain, boolean debug) {
+        String mailDate = emailItem.getString("mail_date");
+        if (!mailDate.contains("-")) {
+            // Combine mail_date with mail_timestamp to form the full date and time
+            long timestamp = emailItem.getLong("mail_timestamp");
+            mailDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp * 1000));
+        }
+        print(GRAY, "EMAIL ID", emailItem.getInt("mail_id") + "");
         if (emailItem.has("att") && emailItem.getLong("att") > 0) {
             printAttachmentLink(emailItem, debug);
         }
-        print(GRAY, "From", emailItem.getString("mail_from"));
-        print(GRAY, "Subject", emailItem.getString("mail_subject"));
-        print(GRAY, "Message", RESET + "\n" + BLUE + getEmailContent(emailItem.getInt("mail_id")) + RESET);
+        print(GRAY, "TIME", mailDate);
+        print(GRAY, "SIZE", emailItem.getString("mail_size") + " bytes");
+        print(GRAY, "FROM", emailItem.getString("mail_from"));
+        print(GRAY, "SUBJECT", emailItem.getString("mail_subject"));
+        print(GRAY, "MESSAGE", RESET + "\n" + BLUE + getEmailContent(emailItem.getInt("mail_id")) + RESET);
 
         if (emailItem.getString("mail_from").endsWith(stopDomain)) {
-            print(RED, "Email from", stopDomain + " received. Stopping email check.");
+            print(RED, "Email from ", stopDomain + " received. Stopping email check.");
         }
     }
 
@@ -149,26 +160,26 @@ public class GuerrillaMailAPI {
      * the check stops. There is also an option to enable debug output for more detailed response data.<br>
      * </p>
      *
-     * @param apiUrl the URL of the API to check emails (URL API для проверки электронной почты)
-     * @param numAttempts the number of attempts to check emails (количество попыток проверки электронной почты)
+     * @param apiUrl           the URL of the API to check emails (URL API для проверки электронной почты)
+     * @param numAttempts      the number of attempts to check emails (количество попыток проверки электронной почты)
      * @param intervalAttempts the interval (in seconds) between attempts (интервал в секундах между попытками)
-     * @param stopDomain the domain of the email sender after which the check will stop (домен отправителя, после которого проверка прекратится)
-     * @param debug whether to print debug information (если true, выводится отладочная информация)
+     * @param stopDomain       the domain of the email sender after which the check will stop (домен отправителя, после которого проверка прекратится)
+     * @param debug            whether to print debug information (если true, выводится отладочная информация)
      */
     private static void checkEmails(String apiUrl, int numAttempts, int intervalAttempts, String stopDomain, boolean debug) {
         try {
             for (int attempt = 1; attempt <= numAttempts; attempt++) {
-                print(YELLOW, "Attempt to check emails", attempt + "");
+                print(GRAY, String.valueOf(attempt), YELLOW + "Attempt is starting" + RESET);
                 JSONObject jsonResponse = makeApiCall(apiUrl);
 
                 if (debug) {
                     printSelectedFieldsFromResponse(jsonResponse.toString(), apiUrl, setupConnection(apiUrl));
-                    print(PURPLE, "Response", jsonResponse.toString(2));
+                    print(getCallingMethodName() + PURPLE, ": RAW Response", jsonResponse.toString(2));
                 }
 
                 if (jsonResponse.has("list")) {
                     JSONArray emailList = jsonResponse.getJSONArray("list");
-                    print(GREEN, "New emails in box found", emailList.length() + "");
+                    print(GRAY, attempt + ": " + RESET + "[" + YELLOW + "New emails in box found", emailList.length() + "");
                     for (int i = 0; i < emailList.length(); i++) {
                         JSONObject emailItem = emailList.getJSONObject(i);
                         printEmailDetails(emailItem, stopDomain, debug);
@@ -183,13 +194,13 @@ public class GuerrillaMailAPI {
                 if (attempt < numAttempts) {
                     delay(intervalAttempts);
                 }
-                System.out.println("----------------------------------------------------------------");
+                print(GRAY, String.valueOf(attempt), YELLOW + "Attempt completed" + RESET);
+                System.out.println("--------------------------------------------------");
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-
 
     /**
      * <strong>Русский:</strong><br>
@@ -214,43 +225,148 @@ public class GuerrillaMailAPI {
             String response = readResponse(connection);
             JSONObject jsonResponse = new JSONObject(response);
             setSidToken(jsonResponse.getString("sid_token"));
-            print(PURPLE, "Session Data Received", CYAN + "Email: " + emailAddress + RESET);
+            print(getCallingMethodName() + PURPLE, ": Session Data Received for Email", CYAN + emailAddress + RESET);
             return jsonResponse.getString("sid_token");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to get session data", e);
         }
         return null;
     }
 
     /**
      * <strong>Русский:</strong><br>
-     * <code>Этот метод выполняет запрос к API для получения случайного адреса электронной почты.</code>
-     * Он возвращает полученный адрес или выводит ошибку, если запрос не удался.<br>
+     * <code>Этот метод возвращает имя метода, который его вызвал</code><br>
      * </p>
      * <strong>English:</strong><br>
-     * <code>This method makes an API call to retrieve a random email address.</code>
-     * It returns the obtained email address or prints an error if the request fails.<br>
+     * <code>This method returns the name of the method that called it</code><br>
      * </p>
      *
-     * @return <code>a random email address (случайный адрес электронной почты)</code>
+     * @return <code>the name of the calling method (имя вызывающего его метода)</code>
      */
-    public static String getRandomEmailAddress() {
+    private static String getCallingMethodName() {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        if (stackTraceElements.length >= 4) {
+            return stackTraceElements[3].getMethodName();
+        }
+        return "Unknown";
+    }
+
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Метод для получения запроса в формате JSON.</code><br>
+     * Этот метод принимает URL API, заголовки и метод запроса, и возвращает их в виде JSON-объекта.<br>
+     * </p>
+     * <strong>English:</strong><br>
+     * <code>Method to get the request in JSON format.</code><br>
+     * This method takes the API URL, headers, and request method, and returns them as a JSON object.<br>
+     * </p>
+     *
+     * @param apiUrl        the URL of the API request (URL запроса API)
+     * @param headers       the headers of the API request (заголовки запроса API)
+     * @param requestMethod the HTTP method of the API request (HTTP метод запроса API)
+     * @return the JSON representation of the request <code>(JSON представление запроса)</code>
+     */
+    public static String getRequestAsJson(String apiUrl, Map<String, List<String>> headers, String requestMethod) {
+        JSONObject json = new JSONObject();
+        String[] urlParts = apiUrl.split("\\?");
+        json.put("base_url", urlParts[0]);
+        if (urlParts.length > 1) {
+            String[] params = urlParts[1].split("&");
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                json.put(keyValue[0], keyValue.length > 1 ? keyValue[1] : "");
+            }
+        }
+        JSONObject headersJson = new JSONObject();
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            headersJson.put(entry.getKey(), entry.getValue());
+        }
+        json.put("headers", headersJson);
+        json.put("method", requestMethod);
+        // printAllKeysAndValues(json);
+        return json.toString(2);
+    }
+
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Этот метод добавляет детали ответа HTTP в JSON-объект и выводит их в консоль.</code><br>
+     * Он добавляет код ответа, сообщение и тип содержимого в JSON-объект, а затем выводит его в консоль.<br>
+     * </p>
+     * <strong>English:</strong><br>
+     * <code>This method adds HTTP response details to a JSON object and prints them to the console.</code><br>
+     * It adds the response code, message, and content type to the JSON object, and then prints it to the console.<br>
+     * </p>
+     *
+     * @param connection   the HTTP connection from which to retrieve response details (HTTP-соединение, из которого извлекаются детали ответа)
+     * @param jsonResponse the JSON object to which response details are added (JSON-объект, в который добавляются детали ответа)
+     * @throws IOException if an I/O error occurs while retrieving response details (если возникает ошибка ввода-вывода при получении деталей ответа)
+     */
+    public static void printResponseDetails(HttpURLConnection connection, JSONObject jsonResponse) throws IOException {
+        jsonResponse.put("code", connection.getResponseCode());
+        jsonResponse.put("message", connection.getResponseMessage());
+        jsonResponse.put("content-type", connection.getContentType());
+        print(getCallingMethodName() + PURPLE, ": RAW Response", jsonResponse.toString(2));
+    }
+
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Этот метод выводит ссылку на вложения в электронном письме.</code><br>
+     * Он извлекает информацию о вложениях из JSON-объекта письма и выводит ссылку на каждое вложение.<br>
+     * </p>
+     * <strong>English:</strong><br>
+     * <code>This method prints a link to the attachments in an email.</code><br>
+     * It extracts information about the attachments from the JSON object of the email and prints a link to each attachment.<br>
+     * </p>
+     *
+     * @param jsonObject the email details in a {@link JSONObject} <code>(детали письма в {@link JSONObject})</code>
+     */
+    // Temporarily not used
+    public static void printAllKeysAndValues(JSONObject jsonObject) {
+        for (String key : jsonObject.keySet()) {
+            System.out.println(key + ": " + jsonObject.get(key));
+        }
+    }
+
+    /**
+     * <strong>Русский:</strong><br>
+     * <code>Этот метод генерирует случайный адрес электронной почты, используя Guerrilla Mail API, и возвращает его.</code><br>
+     * Он создает случайное имя пользователя, формирует полный адрес электронной почты, получает sid_token и отправляет запрос к API для получения адреса электронной почты.<br>
+     * </p>
+     * <strong>English:</strong><br>
+     * <code>This method generates a random email address using the Guerrilla Mail API and returns it.</code><br>
+     * It creates a random username, forms the full email address, retrieves the sid_token, and sends a request to the API to get the email address.<br>
+     * </p>
+     *
+     * @param debug flag to enable debug messages <code>(флаг для включения сообщений отладки)</code>
+     * @return the generated random email address (сгенерированный случайный адрес электронной почты)
+     */
+    public static String getRandomEmailAddress(boolean debug) {
+        String randomEmailUser = UUID.randomUUID().toString().substring(0, 8);
+        String emailAddress = randomEmailUser + "@guerrillamailblock.com";
+        sidToken = getSessionData(emailAddress);
         String apiUrl = API_URL + "?f=get_email_address&lang=en&sid_token=" + sidToken;
         try {
-            HttpURLConnection connection = setupConnection(apiUrl);
+            HttpURLConnection connection = setupBasicConnection(apiUrl);
+            if (debug) {
+                print(getCallingMethodName() + PURPLE, ": RAW Request", getRequestAsJson(apiUrl, connection.getRequestProperties(), connection.getRequestMethod()));
+            }
+            connection = setupConnection(apiUrl);
             String response = readResponse(connection);
             JSONObject jsonResponse = new JSONObject(response);
-            //    System.out.println(jsonResponse.toString(2));
+            if (debug) {
+                printResponseDetails(connection, jsonResponse);
+                // printAllKeysAndValues(jsonResponse); // Print all keys and values
+            }
             setSidToken(jsonResponse.getString("sid_token"));
             if (jsonResponse.has("email_addr")) {
-                String emailAddress = jsonResponse.getString("email_addr");
-                System.out.println(PURPLE + "Email Address: " + "\033[36m" + emailAddress + RESET);
-                return emailAddress;
+                String emailAddr = jsonResponse.getString("email_addr");
+                print(getCallingMethodName() + PURPLE, ": Random Email Address", CYAN + emailAddr + RESET);
+                return emailAddr;
             } else {
-                System.err.println("Failed to get email address: " + response);
+                logger.log(Level.SEVERE, "Failed to get random email address: " + response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to get random email address", e);
         }
         return null;
     }
@@ -268,7 +384,7 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param mailId the ID of the email to fetch content for (ID электронного письма, для которого нужно получить содержимое)
-     * @return <code>the email content as a text (содержимое электронного письма в текстовом виде)</code>
+     * @return the email content as a text <code>(содержимое электронного письма в текстовом виде)</code>
      */
     private static String getEmailContent(int mailId) {
         String apiUrl = API_URL + "?f=fetch_email&email_id=" + mailId + "&sid_token=" + sidToken;
@@ -283,11 +399,10 @@ public class GuerrillaMailAPI {
                 System.err.println("Failed to fetch email content: " + response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to fetch email content", e);
         }
         return "Failed to fetch email content.";
     }
-
 
     /**
      * <strong>Русский:</strong><br>
@@ -298,10 +413,10 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param html the HTML content from which to extract text (HTML-контент, из которого нужно извлечь текст)
-     * @return the <code>extracted text without HTML tags (извлечённый текст без HTML тегов)</code>
+     * @return the extracted text without HTML tags <code>(извлечённый текст без HTML тегов)</code>
      */
     private static String prettyHTML(String html) {
-        return html.replaceAll("\\<.*?>", "").trim(); // Remove all HTML tags and trim leading and trailing whitespace
+        return html.replaceAll("<.*?>", "").trim(); // Remove all HTML tags and trim leading and trailing whitespace
     }
 
 
@@ -314,20 +429,12 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param apiUrl the URL to send the request to (URL, на который отправляется запрос)
-     * @return the <code>response from the URL as a string (ответ от URL в виде строки)</code>
+     * @return the response from the URL as a string <code>(ответ от URL в виде строки)</code>
      * @throws Exception if an error occurs during the connection or reading the response (если возникает ошибка при подключении или чтении ответа)
      */
     private static String getResponseFromUrl(String apiUrl) throws Exception {
         HttpURLConnection connection = setupConnection(apiUrl);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
-            StringBuilder responseBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                responseBuilder.append(line);
-            }
-            String response = responseBuilder.toString();
-            return response;
-        }
+        return getString(connection);
     }
 
     /**
@@ -341,8 +448,8 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param jsonResponse the response from the API as a JSON string (ответ от API в виде строки JSON)
-     * @param apiUrl the URL of the API that was called (URL API, к которому был сделан запрос)
-     * @param connection the HTTP connection used for the API call (HTTP-соединение, использованное для запроса)
+     * @param apiUrl       the URL of the API that was called (URL API, к которому был сделан запрос)
+     * @param connection   the HTTP connection used for the API call (HTTP-соединение, использованное для запроса)
      */
     private static void printSelectedFieldsFromResponse(String jsonResponse, String apiUrl, HttpURLConnection connection) {
         try {
@@ -382,7 +489,7 @@ public class GuerrillaMailAPI {
                 print(PURPLE, "size", jsonObject.getString("size"));
             }
         } catch (JSONException | IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to print selected fields from response", e);
         }
         print(PURPLE, "PHPSESSID", PHPSESSID);
     }
@@ -430,7 +537,7 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param connection the initial HTTP connection to the API (исходное соединение HTTP с API)
-     * @return the <code>updated HTTP connection after handling redirects and cookies (обновленное соединение HTTP после обработки перенаправлений и куков)</code>
+     * @return the updated HTTP connection after handling redirects and cookies <code>(обновленное соединение HTTP после обработки перенаправлений и куков)</code>
      * @throws Exception if an error occurs while handling redirects or extracting cookies (если произошла ошибка при обработке перенаправлений или извлечении куков)
      */
     private static HttpURLConnection handleRedirectsAndCookies(HttpURLConnection connection) throws Exception {
@@ -464,7 +571,7 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param apiUrl the URL of the API to connect to (URL API для подключения)
-     * @return the <code>configured HTTP connection (настроенное соединение HTTP)</code>
+     * @return the configured HTTP connection <code>(настроенное соединение HTTP)</code>
      * @throws Exception if an error occurs while setting up the connection (если произошла ошибка при настройке соединения)
      */
     private static HttpURLConnection setupConnection(String apiUrl) throws Exception {
@@ -483,10 +590,14 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param connection the HTTP connection to read the response from (HTTP соединение для чтения ответа)
-     * @return the <code>response as a string (ответ в виде строки)</code>
+     * @return the response as a string <code>(ответ в виде строки)</code>
      * @throws Exception if an error occurs while reading the response (если произошла ошибка при чтении ответа)
      */
     private static String readResponse(HttpURLConnection connection) throws Exception {
+        return getString(connection);
+    }
+
+    private static String getString(HttpURLConnection connection) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
             StringBuilder responseBuilder = new StringBuilder();
             String line;
@@ -510,45 +621,54 @@ public class GuerrillaMailAPI {
      * and then deletes the email if possible. Afterward, it prints information about the email if the deletion was successful.<br>
      * </p>
      *
-     * @param emailId the ID of the email to be deleted (ID письма для удаления)
+     * @param emailId       the ID of the email to be deleted (ID письма для удаления)
+     * @param debug         flag to enable debug messages (флаг для включения сообщений отладки)
      * @param emailToDelete the email address from which the session data is fetched (адрес электронной почты, с которого извлекаются данные сеанса)
      */
-    public static void deleteEmail(int emailId, String emailToDelete) {
+    public static void deleteEmail(int emailId, String emailToDelete, boolean debug) {
         String sidToken = getSessionData(emailToDelete);
+        if (debug) {
+            try {
+                // Print debug information even if no emails are found
+                String fetchEmailUrl = API_URL + "?f=fetch_email&email_id=" + emailId + "&sid_token=" + sidToken;
+                HttpURLConnection fetchConnection = setupBasicConnection(fetchEmailUrl);
+                print(getCallingMethodName() + PURPLE, ": RAW Request", getRequestAsJson(fetchEmailUrl, fetchConnection.getRequestProperties(), fetchConnection.getRequestMethod()));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (emailId == -1) {
+            print(RED, "No email to delete", "No emails found for the address: " + emailToDelete);
+            return;
+        }
         try {
-            // Fetch email details before deletion
+            // Get email details before deleting
             String fetchEmailUrl = API_URL + "?f=fetch_email&email_id=" + emailId + "&sid_token=" + sidToken;
-            HttpURLConnection fetchConnection = setupConnection(fetchEmailUrl);
+            HttpURLConnection fetchConnection = setupBasicConnection(fetchEmailUrl);
             String fetchResponse = readResponse(fetchConnection);
             JSONObject fetchJsonResponse = new JSONObject(fetchResponse);
+            if (debug) {
+                printResponseDetails(fetchConnection, fetchJsonResponse);
+            }
 
-            // Proceed with deletion
+            // Proceed to delete
             String apiUrl = API_URL + "?f=del_email&email_ids[]=" + emailId + "&sid_token=" + sidToken;
-            HttpURLConnection connection = setupConnection(apiUrl);
+            HttpURLConnection connection = setupBasicConnection(apiUrl);
+            if (debug) {
+                print(getCallingMethodName() + PURPLE, ": RAW Request", getRequestAsJson(apiUrl, connection.getRequestProperties(), connection.getRequestMethod()));
+            }
             String response = readResponse(connection);
             JSONObject jsonResponse = new JSONObject(response);
+            if (debug) {
+                printResponseDetails(connection, jsonResponse);
+            }
             if (jsonResponse.has("deleted_ids")) {
-                JSONArray deletedIds = jsonResponse.getJSONArray("deleted_ids");
-                if (!deletedIds.isEmpty() && !"0".equals(deletedIds.getString(0))) {
-                    // Print email details along with success message
-                    String emailFrom = fetchJsonResponse.getString("mail_from");
-                    String emailSubject = fetchJsonResponse.getString("mail_subject");
-                    String emailDateStr = fetchJsonResponse.getString("mail_date");
-                    String emailBody = prettyHTML(fetchJsonResponse.getString("mail_body"));
-
-                    print(GREEN, "Email успешно удалён", "ID: " + (emailId == -1 ? "'-1' шаблонное письмо от сервиса" : emailId));
-                    print(PURPLE, "От", emailFrom);
-                    print(PURPLE, "Тема", emailSubject);
-                    print(PURPLE, "Дата", emailDateStr.equals("00:00:00") ? "'00:00:00' Шаблонное письмо не имеет дату" : emailDateStr);
-                    print(PURPLE, "Текст", emailBody);
-                } else {
-                    print(RED, "Не удалось удалить email или email ID не найден", response);
-                }
+                print(GREEN, "Deleted Email ID", emailId + "");
             } else {
-                print(RED, "Не удалось удалить email", response);
+                print(RED, "Failed to delete email", "Response: " + response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to delete email", e);
         }
     }
 
@@ -565,8 +685,9 @@ public class GuerrillaMailAPI {
      * </p>
      *
      * @param email the email address from which all emails are to be deleted <code>(адрес электронной почты, с которого нужно удалить все письма)</code>
+     * @param debug flag to enable debug messages <code>(флаг для включения сообщений отладки)</code>
      */
-    public static void deleteAllEmails(String email) {
+    public static void deleteAllEmails(String email, boolean debug) {
         String sidToken = getSessionData(email);
         try {
             // Fetch the list of all email IDs
@@ -577,24 +698,24 @@ public class GuerrillaMailAPI {
 
             if (fetchJsonResponse.has("list")) {
                 JSONArray emailList = fetchJsonResponse.getJSONArray("list");
-
-                if (emailList.length() == 0) {
-                    print(GREEN, "No emails to delete", "The account " + GREEN + email + RESET + " has no emails.");
+                if (emailList.isEmpty()) {
+                    print(GREEN, "No emails to delete", "The account '" + CYAN + email + RESET + "' has no emails.");
                     return;
                 }
-
                 for (int i = 0; i < emailList.length(); i++) {
                     JSONObject emailObj = emailList.getJSONObject(i);
                     int emailId = emailObj.getInt("mail_id");
-                    // Use the deleteEmail method to delete each email
-                    deleteEmail(emailId, sidToken);
+                    // Delete each email
+                    deleteEmail(emailId, email, debug);
+                    print(PURPLE, "Email ID", emailId + PURPLE + " was successfully deleted" + RESET);
+                    System.out.println("********************************************");
                 }
-                print(GREEN, "All emails deleted", "All emails on the account have been successfully deleted.");
+                print(GREEN, "All emails deleted", "All emails on the account '" + CYAN + email + RESET + "' have been successfully deleted.");
             } else {
                 print(RED, "Failed to fetch email list", fetchResponse);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to delete all emails", e);
         }
     }
 
@@ -610,23 +731,22 @@ public class GuerrillaMailAPI {
      * After completion, a message is printed indicating the check completion. If an error occurs, it is printed to the console.<br>
      * </p>
      *
-     * @param emailAddress the email address to check  <code>(адрес электронной почты для проверки)</code>
-     * @param startDelay initial delay before starting the email check  <code>(задержка перед началом проверки)</code>
-     * @param numAttempts number of attempts to check the email  <code>(количество попыток)</code>
+     * @param emailAddress     the email address to check  <code>(адрес электронной почты для проверки)</code>
+     * @param startDelay       initial delay before starting the email check  <code>(задержка перед началом проверки)</code>
+     * @param numAttempts      number of attempts to check the email  <code>(количество попыток)</code>
      * @param intervalAttempts interval between attempts  <code>(интервал между попытками)</code>
-     * @param stopDomain domain to stop checking at  <code>(домен для прекращения проверки)</code>
-     * @param debug flag to enable debug messages  <code>(флаг для включения сообщений отладки)</code>
+     * @param stopDomain       domain to stop checking at  <code>(домен для прекращения проверки)</code>
+     * @param debug            flag to enable debug messages  <code>(флаг для включения сообщений отладки)</code>
      */
     public static void readFromRandomEmail(String emailAddress, int startDelay, int numAttempts, int intervalAttempts, String stopDomain, boolean debug) {
         try {
             delay(startDelay); // Initial delay
-
             String apiUrl = API_URL + "?f=check_email&seq=0&email=" + emailAddress + "&sid_token=" + sidToken;
             checkEmails(apiUrl, numAttempts, intervalAttempts, stopDomain, debug);
             print(GREEN, "Email Check Complete", "All attempts to check emails completed.");
         } catch (Exception e) {
             print(RED, "Failed to check emails", e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to check emails", e);
         }
     }
 
@@ -642,12 +762,12 @@ public class GuerrillaMailAPI {
      * it checks the email according to the specified parameters such as number of attempts, interval between attempts, and the stop domain.<br>
      * </p>
      *
-     * @param emailUser the email address of the user to be registered <code>(адрес для регистрации)</code>
-     * @param startDelay initial delay before checking the email <code>(начальная задержка)</code>
-     * @param numAttempts number of attempts to check the email <code>(количество попыток)</code>
+     * @param emailUser        the email address of the user to be registered <code>(адрес для регистрации)</code>
+     * @param startDelay       initial delay before checking the email <code>(начальная задержка)</code>
+     * @param numAttempts      number of attempts to check the email <code>(количество попыток)</code>
      * @param intervalAttempts interval between attempts <code>(интервал между попытками)</code>
-     * @param stopDomain domain to stop checking at <code>(домен для прекращения проверки)</code>
-     * @param debug flag to enable debug messages <code>(флаг для включения сообщений отладки)</code>
+     * @param stopDomain       domain to stop checking at <code>(домен для прекращения проверки)</code>
+     * @param debug            flag to enable debug messages <code>(флаг для включения сообщений отладки)</code>
      */
     public static void readFromIndividualEmail(String emailUser, int startDelay, int numAttempts, int intervalAttempts, String stopDomain, boolean debug) {
         try {
@@ -661,7 +781,7 @@ public class GuerrillaMailAPI {
 
             if (debug) {
                 printSelectedFieldsFromResponse(jsonResponse.toString(), setEmailUserUrl, setupConnection(setEmailUserUrl));
-                print(PURPLE, "Response", jsonResponse.toString(2));
+                print(getCallingMethodName() + PURPLE, ": RAW Response", jsonResponse.toString(2));
             }
 
             delay(startDelay);
@@ -669,7 +789,7 @@ public class GuerrillaMailAPI {
             String checkEmailUrl = API_URL + "?f=check_email&seq=0&sid_token=" + sidToken;
             checkEmails(checkEmailUrl, numAttempts, intervalAttempts, stopDomain, debug);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to read from individual email", e);
         }
     }
 
@@ -688,19 +808,18 @@ public class GuerrillaMailAPI {
      * @param email the email object containing email details <code>(объект письма с деталями письма)</code>
      * @param debug flag to enable debug messages <code>(флаг для включения сообщений отладки)</code>
      */
-    private static void printAttachmentLink(JSONObject email,boolean debug) {
+    private static void printAttachmentLink(JSONObject email, boolean debug) {
         int emailId = email.getInt("mail_id");
         String apiUrl = API_URL + "?f=fetch_email&email_id=" + emailId + "&sid_token=" + getSidToken();
         try {
             String response = getResponseFromUrl(apiUrl);
             JSONObject jsonResponse = new JSONObject(response);
             if (debug) {
-                // TODO: API response logging
-                print(PURPLE, "Attachment Response for email " + emailId, jsonResponse.toString(2));
+                print(getCallingMethodName() + PURPLE, ": Attachment Response for email " + emailId, jsonResponse.toString(2));
             }
             if (jsonResponse.has("mail_body")) {
                 if (jsonResponse.has("att") && jsonResponse.getInt("att") > 0) {
-                    print("\033[37m", "Attachment", jsonResponse.getInt("att") + "");
+                    print(GRAY, "Attachments", jsonResponse.getInt("att") + "");
                     JSONArray attInfoArray = jsonResponse.getJSONArray("att_info");
                     for (int i = 0; i < attInfoArray.length(); i++) {
                         JSONObject attInfo = attInfoArray.getJSONObject(i);
@@ -708,7 +827,8 @@ public class GuerrillaMailAPI {
                         String fileName = attInfo.getString("f");
                         String partId = attInfo.getString("p");
                         String attachmentUrl = "https://www.guerrillamail.com/inbox?get_att&email_id=" + emailId + "&part_id=" + partId + "&sid_token=" + getSidToken();
-                        System.out.println(GRAY + "Download Link " + RESET + "[" + (i + 1) + "]: " + attachmentUrl + GRAY + ", File name:" + RESET + "[" + fileName + "]" + RESET + GRAY + ", File type: [" + RESET + fileType + "]");
+                        print(GRAY, "    Attachment", String.valueOf((i + 1)));
+                        System.out.println(GRAY + "    " + "    File Link: " + RESET + attachmentUrl + GRAY + "\n    " + "    File Name: " + RESET + fileName + RESET + GRAY + "\n    " + "    File Type: " + RESET + fileType);
                     }
                 } else {
                     print(GRAY, "Attachments", "No attachments found");
@@ -717,7 +837,7 @@ public class GuerrillaMailAPI {
                 print(RED, "Failed to fetch attachment link", response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to print attachment link", e);
         }
     }
 
@@ -741,7 +861,7 @@ public class GuerrillaMailAPI {
             HttpURLConnection connection = setupConnection(apiUrl);
             return readResponse(connection);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to perform GET request", e);
             return null;
         }
     }
@@ -762,13 +882,25 @@ public class GuerrillaMailAPI {
      * Returns -1 in case of an error or an empty response.
      *
      * @param emailAddress <code>адрес электронной почты для получения ID</code> (the email address to fetch the ID for)
+     * @param debug        <code>флаг для включения отладочных сообщений</code> (flag to enable debug messages)
      * @return <code>ID первого электронного письма или -1 в случае ошибки</code> (the ID of the first email, or -1 if an error occurs)
      */
-    public static int getEmailId(String emailAddress) {
+    private static int getEmailId(String emailAddress, boolean debug) {
         String sidToken = getSessionData(emailAddress);
         String apiUrl = API_URL + "?f=check_email&sid_token=" + sidToken + "&seq=20";
+        if (debug) {
+            try {
+                HttpURLConnection connection = setupBasicConnection(apiUrl);
+                print(getCallingMethodName() + PURPLE, ": RAW Request", getRequestAsJson(apiUrl, connection.getRequestProperties(), connection.getRequestMethod()));
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Failed to print raw request", e);
+            }
+        }
         String response = performGetRequest(apiUrl);
         if (response != null) {
+            if (debug) {
+                print(getCallingMethodName() + PURPLE, ": RAW Response", response);
+            }
             try {
                 JSONObject jsonResponse = new JSONObject(response);
                 if (jsonResponse.has("list")) {
@@ -778,10 +910,10 @@ public class GuerrillaMailAPI {
                     }
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, "Failed to get email ID", e);
             }
         }
-        return -1;
+        return -1; // Return -1 if no emails are found. -1 this is ID of template email
     }
 
     /**
@@ -790,7 +922,7 @@ public class GuerrillaMailAPI {
      * Этот метод генерирует случайный адрес электронной почты через API Guerrilla Mail и инициирует процесс проверки
      * входящих писем на этот адрес. Выполняется указанное количество попыток с заданным интервалом, а также проверка,
      * есть ли письма с домена, при котором проверка должна быть остановлена. Можно включить или отключить режим отладки.
-     *
+     * <p>
      * <strong>English:</strong><br>
      * <code>Test method to create a random email account using Guerrilla Mail and check for incoming emails.</code><br>
      * This method generates a random email address via the Guerrilla Mail API and initiates the process of checking
@@ -799,8 +931,8 @@ public class GuerrillaMailAPI {
      */
     @Test
     public void createRandomAccount() {
-        String randomEmailAddress = GuerrillaMailAPI.getRandomEmailAddress();
-        readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@email.com", false);
+        String randomEmailAddress = getRandomEmailAddress(false);
+        readFromRandomEmail(randomEmailAddress, 1, 5, 10, "stop@domain.com", false);
     }
 
     /**
@@ -809,7 +941,7 @@ public class GuerrillaMailAPI {
      * Этот метод использует указанный адрес электронной почты и вызывает метод для проверки входящих писем. Выполняется указанное
      * количество попыток с заданным интервалом между ними. Также проверяется, есть ли письма с домена, при котором проверка
      * должна быть остановлена. Возможность включения режима отладки.
-     *
+     * <p>
      * <strong>English:</strong><br>
      * <code>Test method to create a new email account using a specific email address.</code><br>
      * This method uses the given email address and calls the method to check incoming emails. It performs the specified
@@ -818,8 +950,8 @@ public class GuerrillaMailAPI {
      */
     @Test
     public void createNewAccount() {
-        String specificEmailAddress = "portishea9@guerrillamailblock.com";
-        readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@email.com", false);
+        String specificEmailAddress = "portishea10@guerrillamailblock.com";
+        readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@domain.ua", false);
     }
 
     /**
@@ -827,7 +959,7 @@ public class GuerrillaMailAPI {
      * <code>Тест удаления первого электронного письма по заданному адресу.</code><br>
      * Этот метод использует указанный адрес электронной почты для получения его идентификатора и затем вызывает метод для
      * удаления письма с полученным идентификатором.
-     *
+     * <p>
      * <strong>English:</strong><br>
      * <code>Test  to delete first email using a specified email address.</code><br>
      * This method uses the provided email address to fetch its ID and then calls the method to delete the email with the
@@ -835,21 +967,21 @@ public class GuerrillaMailAPI {
      */
     @Test
     public void deleteOneEMail() {
-        String emailToDelete = "portishead9@guerrillamailblock.com";
-        deleteEmail(getEmailId(emailToDelete), emailToDelete);
+        String emailToDelete = "portishea10@guerrillamailblock.com";
+        deleteEmail(getEmailId(emailToDelete, false), emailToDelete, false);
     }
 
     /**
      * <strong>Русский:</strong><br>
      * <code>Тест удаления всех электронных писем на указанном адресе электронной почты.</code><br>
      * Этот метод вызывает функцию удаления всех писем на аккаунте, используя заданный адрес электронной почты.
-     *
+     * <p>
      * <strong>English:</strong><br>
      * <code>Test method to delete all emails on the specified email address.</code><br>
      * This method calls the function to delete all emails on the account using the provided email address.
      */
     @Test
     public void deleteAllEmailsOnAccount() {
-        deleteAllEmails("portishead9@guerrillamailblock.com");
+        deleteAllEmails("portishea10@guerrillamailblock.com", false);
     }
 }

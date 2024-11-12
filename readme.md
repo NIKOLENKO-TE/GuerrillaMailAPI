@@ -1,4 +1,4 @@
-# 📧 GuerrillaMailAPI 📬
+# 📧 GuerrillaMailApi 📬
 
 A Java utility to interact with the Guerrilla Mail API for creating and managing temporary email addresses. This project demonstrates how to retrieve new email addresses, check the inbox for new emails, and fetch email content using Guerrilla Mail's API.
 
@@ -37,13 +37,13 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/NIKOLENKO-TE/GuerrillaMailAPI.git
+    git clone https://github.com/NIKOLENKO-TE/GuerrillaMailApi.git
     ```
 
 2. **Navigate to the project directory:**
 
     ```sh
-    cd GuerrillaMailAPI
+    cd GuerrillaMailApi
     ```
 
 3. **Build the project using your preferred build tool (e.g., Gradle).**
@@ -57,7 +57,7 @@ To retrieve a new email address:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
+        String emailAddress = GuerrillaMailApi.getRandomEmailAddress();
         System.out.println("Generated Email: " + emailAddress);
     }
 }
@@ -78,8 +78,8 @@ To check the inbox for new emails:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
-        GuerrillaMailAPI.readFromRandomEmail(emailAddress, 1, 5, 20, "stop@email.com", false);
+        String emailAddress = GuerrillaMailApi.getRandomEmailAddress();
+        GuerrillaMailApi.readFromRandomEmail(emailAddress, 1, 5, 20, "stop@email.com", false);
     }
 }
 ```
@@ -91,9 +91,9 @@ To fetch the content of an email by its ID:
 ```java
 public class Main {
     public static void main(String[] args) {
-        String emailAddress = GuerrillaMailAPI.getRandomEmailAddress();
+        String emailAddress = GuerrillaMailApi.getRandomEmailAddress();
         int mailId = 123456; // Replace with actual mail ID
-        String content = GuerrillaMailAPI.getEmailContent(mailId);
+        String content = GuerrillaMailApi.getEmailContent(mailId);
         System.out.println("Email Content: " + content);
     }
 }
@@ -107,7 +107,7 @@ To delete a single email:
 public class Main {
     public static void main(String[] args) {
         String emailToDelete = "portishead@guerrillamailblock.com";
-        GuerrillaMailAPI.deleteEmail(GuerrillaMailAPI.getEmailId(emailToDelete), emailToDelete);
+        GuerrillaMailApi.deleteEmail(GuerrillaMailApi.getEmailId(emailToDelete), emailToDelete);
     }
 }
 ```
@@ -119,7 +119,7 @@ To delete all emails on an account:
 ```java
 public class Main {
     public static void main(String[] args) {
-        GuerrillaMailAPI.deleteAllEmails("portishead@guerrillamailblock.com");
+        GuerrillaMailApi.deleteAllEmails("portishead@guerrillamailblock.com");
     }
 }
 ```
@@ -147,9 +147,9 @@ The project includes a few tests to demonstrate the usage of the API. You can ru
 ```java
 @Test
 public void createRandomAccount() {
-    String randomEmailAddress = GuerrillaMailAPI.getRandomEmailAddress();
+    String randomEmailAddress = GuerrillaMailApi.getRandomEmailAddress();
     System.out.println("Generated Random Email: " + randomEmailAddress);
-    GuerrillaMailAPI.readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@email.com", false);
+    GuerrillaMailApi.readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@email.com", false);
 }
 ```
 
@@ -160,7 +160,7 @@ public void createRandomAccount() {
 public void createNewAccount() {
     String specificEmailAddress = "portishead9@guerrillamailblock.com";
     System.out.println("Using Specific Email: " + specificEmailAddress);
-    GuerrillaMailAPI.readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@email.com", false);
+    GuerrillaMailApi.readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@email.com", false);
 }
 ```
 
@@ -170,7 +170,7 @@ public void createNewAccount() {
 @Test
 public void deleteOneEMail() {
     String emailToDelete = "portishead9@guerrillamailblock.com";
-    GuerrillaMailAPI.deleteEmail(GuerrillaMailAPI.getEmailId(emailToDelete), emailToDelete);
+    GuerrillaMailApi.deleteEmail(GuerrillaMailApi.getEmailId(emailToDelete), emailToDelete);
 }
 ```
 
@@ -179,7 +179,7 @@ public void deleteOneEMail() {
 ```java
 @Test
 public void deleteAllEmailsOnAccount() {
-    GuerrillaMailAPI.deleteAllEmails("portishead9@guerrillamailblock.com");
+    GuerrillaMailApi.deleteAllEmails("portishead9@guerrillamailblock.com");
 }
 ```
 
@@ -227,7 +227,7 @@ https://api.guerrillamail.com/ajax.php?f=get_email_address&lang=en&site=guerrill
 **Response:**
 ```json
 {
-  "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email_addr":"GuerrillaMailApi@guerrillamailblock.com",
   "email_timestamp":1405770047,
   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
@@ -246,13 +246,13 @@ Sets a new email address or extends the current one.
 
 **Example Request:**
 ```
-https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user=GuerrillaMailAPI&site=guerrillamail.com&lang=en&sid_token=lmmb0hfqa6qjoduvr2vdenas62
+https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user=GuerrillaMailApi&site=guerrillamail.com&lang=en&sid_token=lmmb0hfqa6qjoduvr2vdenas62
 ```
 
 **Response:**
 ```json
 {
-  "email_addr":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email_addr":"GuerrillaMailApi@guerrillamailblock.com",
   "email_timestamp":1405770047,
   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
@@ -287,7 +287,7 @@ https://api.guerrillamail.com/ajax.php?f=check_email&seq=0&sid_token=lmmb0hfqa6q
     }
   ],
   "count":"1",
-  "email":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email":"GuerrillaMailApi@guerrillamailblock.com",
   "sid_token":"jogbasvjjes145uej10hv70v67"
 }
 ```
@@ -322,7 +322,7 @@ https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token=lmmb0
     }
   ],
   "count":"1",
-  "email":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email":"GuerrillaMailApi@guerrillamailblock.com",
   "sid_token":"jogbasvjjes145uej10hv70v67"
 }
 ```
@@ -346,7 +346,7 @@ https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=23518264&sid_token
 {
   "mail_id":"23518264",
   "mail_from":"bounce1@worldlargestsafelist.com",
-  "mail_recipient":"GuerrillaMailAPI@guerrillamailblock.com",
+  "mail_recipient":"GuerrillaMailApi@guerrillamailblock.com",
   "mail_subject":"MULTIPLY Your Traffic, Leads & Subscribers to INFINITY!",
   "mail_excerpt":"Aloha from beautiful Hawai`i ...",
   "mail_body":"The message part of the email.",
@@ -369,7 +369,7 @@ Forgets the current email address but keeps the session active.
 
 **Example Request:**
 ```
-https://api.guerrillamail.com/ajax.php?f=forget_me&email_addr=GuerrillaMailAPI@guerrillamailblock.com&sid_token=lmmb0hfqa6qjoduvr2vdenas62
+https://api.guerrillamail.com/ajax.php?f=forget_me&email_addr=GuerrillaMailApi@guerrillamailblock.com&sid_token=lmmb0hfqa6qjoduvr2vdenas62
 ```
 
 **Response:**
@@ -419,7 +419,7 @@ https://api.guerrillamail.com/ajax.php?f=get_older_list&seq=1000&limit=10&sid_to
   "list":[
     {
       "mail_id":"23456789",
-      "mail_from":"GuerrillaMailAPI@example.com",
+      "mail_from":"GuerrillaMailApi@example.com",
       "mail_subject":"Older Email",
       "mail_excerpt":"This is an older email.",
       "mail_timestamp":"1423958500",
@@ -428,7 +428,7 @@ https://api.guerrillamail.com/ajax.php?f=get_older_list&seq=1000&limit=10&sid_to
     }
   ],
   "count":"1",
-  "email":"GuerrillaMailAPI@guerrillamailblock.com",
+  "email":"GuerrillaMailApi@guerrillamailblock.com",
   "sid_token":"lmmb0hfqa6qjoduvr2vdenas62"
 }
 ```

@@ -2,7 +2,7 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
-!**/src/GuerrillaMailAPI/**/build/
+!**/src/GuerrillaMailApi/**/build/
 
 ### IntelliJ IDEA ###
 .idea
@@ -11,5 +11,5 @@ build/
 *.ipr
 out/
 !**/src/main/**/out/
-!**/src/GuerrillaMailAPI/**/out/
+!**/src/GuerrillaMailApi/**/out/
 

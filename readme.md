@@ -11,6 +11,7 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 - [Development](#-development)
 - [Tests](#-tests)
 - [Contributing](#-contributing)
+- [GuerrillaMail](#-guerrilla-mail-json-api-documentation)
 
 ## ✨ Features
 
@@ -188,7 +189,7 @@ Feel free to contribute to this project by submitting a pull request or opening 
 
 ---
 
-## Guerrilla Mail JSON API Documentation
+## 💡 Guerrilla Mail JSON API Documentation
 
 ### Introduction
 

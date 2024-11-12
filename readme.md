@@ -8,7 +8,6 @@ A Java utility to interact with the Guerrilla Mail API for creating and managing
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
 - [Usage](#-usage)
-- [Examples](#-examples)
 - [Development](#-development)
 - [Tests](#-tests)
 - [Contributing](#-contributing)

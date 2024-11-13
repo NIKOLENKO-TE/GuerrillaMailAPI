@@ -61,6 +61,10 @@ public class GuerrillaMailApi {
         System.out.println(color + key + ": " + RESET + "[" + value + "]");
     }
 
+    private static void print(String color, String key) {
+        System.out.println(color + key + RESET);
+    }
+
     public static String getSidToken() {
         return sidToken;
     }
@@ -126,22 +130,27 @@ public class GuerrillaMailApi {
      * @param emailItem  the email details in a {@link JSONObject} <code>(детали письма в {@link JSONObject})</code>
      * @param stopDomain the domain after which email check will stop <code>(домен, после которого проверка писем прекратится)</code>
      */
-    private static void printEmailDetails(JSONObject emailItem, String stopDomain, boolean debug) {
+    private static void printEmailDetails(JSONObject emailItem, String stopDomain, boolean debug, int emailIndex) {
         String mailDate = emailItem.getString("mail_date");
         if (!mailDate.contains("-")) {
             // Combine mail_date with mail_timestamp to form the full date and time
             long timestamp = emailItem.getLong("mail_timestamp");
             mailDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp * 1000));
         }
+        print(GREEN, "****************** EMAIL № " + RESET + "[" + (emailIndex + 1) + "]" + GREEN + " ******************");
         print(GRAY, "EMAIL ID", emailItem.getInt("mail_id") + "");
         if (emailItem.has("att") && emailItem.getLong("att") > 0) {
             printAttachmentLink(emailItem, debug);
+            if (emailItem.has("mail_size")) {
+                print(GRAY, "SIZE", emailItem.getString("mail_size") + " bytes");
+            } else {
+                print(GRAY, "SIZE", "N/A");
+            }
         }
         print(GRAY, "TIME", mailDate);
-        print(GRAY, "SIZE", emailItem.getString("mail_size") + " bytes");
         print(GRAY, "FROM", emailItem.getString("mail_from"));
         print(GRAY, "SUBJECT", emailItem.getString("mail_subject"));
-        print(GRAY, "MESSAGE", RESET + "\n" + BLUE + getEmailContent(emailItem.getInt("mail_id")) + RESET);
+        print(GRAY, "MESSAGE", RESET + "\n" + BLUE + getEmailContent(emailItem.getInt("mail_id")) + RESET + "\n");
 
         if (emailItem.getString("mail_from").endsWith(stopDomain)) {
             print(RED, "Email from ", stopDomain + " received. Stopping email check.");
@@ -182,7 +191,7 @@ public class GuerrillaMailApi {
                     print(GRAY, attempt + ": " + RESET + "[" + YELLOW + "New emails in box found", emailList.length() + "");
                     for (int i = 0; i < emailList.length(); i++) {
                         JSONObject emailItem = emailList.getJSONObject(i);
-                        printEmailDetails(emailItem, stopDomain, debug);
+                        printEmailDetails(emailItem, stopDomain, debug, i);
                         if (emailItem.getString("mail_from").endsWith(stopDomain)) {
                             return; // Exit after receiving email from specified domain
                         }
@@ -930,9 +939,9 @@ public class GuerrillaMailApi {
      * and checks if any email matches a specified stop domain. Debugging mode can be toggled on or off.
      */
     @Test
-    public void createRandomAccount() {
+    public void readFromRandomEmailAccount() {
         String randomEmailAddress = getRandomEmailAddress(false);
-        readFromRandomEmail(randomEmailAddress, 1, 5, 10, "stop@domain.com", false);
+        readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@domain.com", false);
     }
 
     /**
@@ -949,7 +958,7 @@ public class GuerrillaMailApi {
      * Debugging mode can be enabled or disabled.
      */
     @Test
-    public void createNewAccount() {
+    public void readFromIndividualEmailAccount() {
         String specificEmailAddress = "portishea10@guerrillamailblock.com";
         readFromIndividualEmail(specificEmailAddress, 1, 2, 10, "stop@domain.ua", false);
     }

@@ -9,6 +9,7 @@ build/
 *.iws
 *.iml
 *.ipr
+*.log
 out/
 !**/src/main/**/out/
 !**/src/GuerrillaMailApi/**/out/

@@ -1,3 +1,5 @@
+package mail;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -129,7 +131,6 @@ public class GuerrillaMailApi {
     private static void printEmailDetails(JSONObject emailItem, String stopDomain, boolean debug) {
         String mailDate = emailItem.getString("mail_date");
         if (!mailDate.contains("-")) {
-            // Combine mail_date with mail_timestamp to form the full date and time
             long timestamp = emailItem.getLong("mail_timestamp");
             mailDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(timestamp * 1000));
         }
@@ -138,7 +139,12 @@ public class GuerrillaMailApi {
             printAttachmentLink(emailItem, debug);
         }
         print(GRAY, "TIME", mailDate);
-        print(GRAY, "SIZE", emailItem.getString("mail_size") + " bytes");
+        // Check for mail_size existence
+        if (emailItem.has("size")) {
+            print(GRAY, "SIZE", emailItem.get("size").toString() + " bytes");
+        } else {
+            print(GRAY, "SIZE", "unknown");
+        }
         print(GRAY, "FROM", emailItem.getString("mail_from"));
         print(GRAY, "SUBJECT", emailItem.getString("mail_subject"));
         print(GRAY, "MESSAGE", RESET + "\n" + BLUE + getEmailContent(emailItem.getInt("mail_id")) + RESET);
@@ -147,6 +153,7 @@ public class GuerrillaMailApi {
             print(RED, "Email from ", stopDomain + " received. Stopping email check.");
         }
     }
+
 
     /**
      * <strong>Русский:</strong><br>
@@ -932,7 +939,7 @@ public class GuerrillaMailApi {
     @Test
     public void createRandomAccount() {
         String randomEmailAddress = getRandomEmailAddress(false);
-        readFromRandomEmail(randomEmailAddress, 1, 5, 10, "stop@domain.com", false);
+        readFromRandomEmail(randomEmailAddress, 1, 2, 10, "stop@domain.com", false);
     }
 
     /**

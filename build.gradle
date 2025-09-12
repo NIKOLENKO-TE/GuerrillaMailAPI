@@ -9,9 +9,20 @@ repositories {
     mavenCentral()
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 dependencies {
-    implementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.11.0-M2'
-    implementation group: 'org.json', name: 'json', version: '20240303'
+    // JUnit 5 (Jupiter)
+    testImplementation platform('org.junit:junit-bom:5.11.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly  'org.junit.jupiter:junit-jupiter-engine'
+
+    // Твои runtime-зависимости
+    implementation 'org.json:json:20240303'
 }
 
 test {

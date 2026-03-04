@@ -72,7 +72,7 @@ public class Main {
 - `intervalAttempts`: Interval between attempts (in seconds).
 - `stopDomain`: Domain to stop checking at.
 - `debug`: Flag to enable debug messages (true/false).
-```
+
 To check the inbox for new emails:
 
 ```java
